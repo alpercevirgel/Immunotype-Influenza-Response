@@ -1,0 +1,2315 @@
+---
+title: "Data analysis"
+author: "Alper Cevirgel"
+output: pdf_document
+---
+
+# HI titers on day 0 and day 28, in pre-existing HI titer categories (Figure 2a)
+```{r}
+plot_data <- HI_df %>%
+  drop_na(GMT_T4T0) %>%
+  dplyr::select(subject_identifier, GMT_T0, GMT_T4) %>%
+  reshape2::melt()
+
+ggplot(plot_data, aes(x = value, fill = variable)) +
+  geom_density(alpha = 0.5) +
+  scale_fill_manual(values = c("lightyellow", "lightblue")) +
+  geom_vline(xintercept = 40, linetype = "dashed", color = "blue") +
+  geom_vline(xintercept = 80, linetype = "dashed", color = "red") +
+  theme_pubr() +
+  scale_x_continuous(trans = 'log2') + 
+  annotation_logticks(sides = "b") +
+  xlab("Day 0 HIA titers") +
+  ylab("Percentage of participants") +
+  ylim(0, 0.35)
+
+
+pdf(file = paste0(day0_HI_levels.dir, "HI_pre_post_vacc.pdf", sep=""), width =7 , height =3.5)
+ggplot(plot_data, aes(x = value, fill = variable)) +
+  geom_density(alpha = 0.5) +
+  scale_fill_manual(values = c("lightyellow", "lightblue")) +
+  geom_vline(xintercept = 40, linetype = "dashed", color = "blue") +
+  geom_vline(xintercept = 80, linetype = "dashed", color = "red") +
+  theme_pubr() +
+  scale_x_continuous(trans = 'log2') + 
+  annotation_logticks(sides = "b") +
+  xlab("Day 0 HIA titers") +
+  ylab("Percentage of participants") +
+  ylim(0, 0.35)
+dev.off()
+
+
+```
+
+# Day 0 HI vs Day 28/Day 0 fold change Figure 2b
+```{r}
+dat <- HI_df %>%
+  drop_na(GMT_T0,GMT_T4,GMT_T4T0) 
+
+yrange <- range(c(2,320))
+xrange <- range(c(0.1785714,320))
+
+n1 <- ggscatter(dat, 
+                     y = "GMT_T0", 
+                     x = "GMT_T4T0",
+                     alpha = 0.8,
+                     color = "T0_l3",
+                     palette = c("#E69F00","#009E73","#0072B2","black"),
+                     add = "reg.line",  # Add regression line
+                     conf.int = TRUE)+ # Add confidence interval
+        stat_cor(aes(color = T0_l3),
+             show.legend = FALSE,
+             method = "spearman",
+             p.accuracy = 0.001,
+             r.accuracy = 0.01)+
+  theme(legend.position = "none")+
+  xlab("Day 28/Day 0 HI titer ratio")+
+  ylab("Day 0 HI titer")+
+  scale_y_continuous(limits = yrange, trans = 'log2') + 
+  scale_x_continuous(limits = xrange, trans = 'log2') + 
+  annotation_logticks(sides="l")+
+  annotation_logticks(sides="b")
+
+
+n2<-ggscatter(dat, 
+                     y = "GMT_T0", 
+                     x = "GMT_T4T0",
+                     alpha = 0,
+                     add = "reg.line",  # Add regression line
+                     conf.int = TRUE)+ # Add confidence interval
+        stat_cor(show.legend = FALSE,
+             method = "spearman",
+             p.accuracy = 0.001,
+             r.accuracy = 0.01)+
+    theme(legend.position = "none")+
+  xlab("Day 28/Day 0 HI titer ratio")+
+  ylab("Day 0 HI titer")+
+  scale_y_continuous(limits = yrange, trans = 'log2') + 
+  scale_x_continuous(limits = xrange, trans = 'log2') + 
+  annotation_logticks(sides="l")+
+  annotation_logticks(sides="b")
+
+
+pdf(file = paste0(day0_HI_levels.dir, "HIA_d0_d28d0_corr.pdf", sep=""), width =8 , height =4)
+ggpubr::ggarrange(n1, n2,ncol = 2, nrow = 1,widths = c(1, 1))
+dev.off()
+```
+
+# Day 28 HI vs Day 28/Day 0 fold change Figure 2c
+```{r}
+dat <- HI_df %>%
+  drop_na(GMT_T0,GMT_T4,GMT_T4T0) 
+
+yrange <- range(c(2,1810))
+xrange <- range(c(0.1785714,320))
+
+n1 <- ggscatter(dat, 
+                     y = "GMT_T4", 
+                     x = "GMT_T4T0",
+                     alpha = 0.8,
+                     color = "T0_l3",
+                     palette = c("#E69F00","#009E73","#0072B2","black"),
+                     add = "reg.line",  # Add regression line
+                     conf.int = TRUE)+ # Add confidence interval
+        stat_cor(aes(color = T0_l3),
+             show.legend = FALSE,
+             method = "spearman",
+             p.accuracy = 0.001,
+             r.accuracy = 0.01)+
+  theme(legend.position = "none")+
+  xlab("Day 28/Day 0 HI titer ratio")+
+  ylab("Day 28 HI titer")+
+  scale_y_continuous(limits = yrange, trans = 'log2') + 
+  scale_x_continuous(limits = xrange, trans = 'log2') + 
+  annotation_logticks(sides="l")+
+  annotation_logticks(sides="b")
+
+n2<-ggscatter(dat, 
+                     y = "GMT_T4", 
+                     x = "GMT_T4T0",
+                     alpha = 0,
+                     add = "reg.line",  # Add regression line
+                     conf.int = TRUE)+ # Add confidence interval
+        stat_cor(show.legend = FALSE,
+             method = "spearman",
+             p.accuracy = 0.001,
+             r.accuracy = 0.01)+
+    theme(legend.position = "none")+
+  xlab("Day 28/Day 0 HI titer ratio")+
+  ylab("Day 28 HI titer")+
+  scale_y_continuous(limits = yrange, trans = 'log2') + 
+  scale_x_continuous(limits = xrange, trans = 'log2') + 
+  annotation_logticks(sides="l")+
+  annotation_logticks(sides="b")
+
+
+pdf(file = paste0(day0_HI_levels.dir, "HIA_d28_d28d0_corr.pdf", sep=""), width =8 , height =4)
+ggpubr::ggarrange(n1, n2,ncol = 2, nrow = 1,widths = c(1, 1))
+dev.off()
+```
+# Pre-/post-vaccination immune subset changes, most significant by dunn test (Table 1, Supp.table 1)
+## data preparation, calculating fold change
+```{r}
+truc_d2d0_fc_median <- truc_d12d0_raw_p01 %>% 
+  dplyr::select(-c(subject_identifier)) %>% 
+  apply(2,median) %>% 
+  as.data.frame() %>%
+  rownames_to_column() %>%
+  rename("variable" = "rowname",
+         "fc"=".") %>%
+  mutate(variable = gsub("_D12D0_num", "_num", variable)) %>%
+  mutate(variable = gsub("_D12D0_per", "_per", variable)) 
+
+truc_d7d0_fc_median <- truc_d7d0_raw_p01 %>% 
+  dplyr::select(-c(subject_identifier)) %>% 
+  apply(2,median) %>% 
+  as.data.frame() %>%
+  rownames_to_column() %>%
+  rename("variable" = "rowname",
+         "fc"=".") %>%
+  mutate(variable = gsub("_D7D0_num", "_num", variable)) %>%
+  mutate(variable = gsub("_D7D0_per", "_per", variable)) 
+```
+
+## day 0 & day 1-2
+```{r}
+## select the dataset
+df_stat <- truc_all %>%
+  filter(timepoint %!in% "C") %>%
+  dplyr::select(-dplyr::contains(c("plasmablast_IgD"))) %>%
+  dplyr::select(-dplyr::contains(c("CD56neg"))) 
+  
+## melt
+df_stat_melt <- df_stat %>% 
+  reshape2::melt(.)
+
+### kruskal.test and Dunn's test
+## With kruskal.test we identify overall which subsets are significant and then Dunn's test tells us which are different between pairs of clusters
+kw.test.all <- df_stat_melt %>% 
+  group_by(variable) %>% 
+  kruskal_test(value ~ timepoint) %>% 
+  adjust_pvalue(method = "BH") 
+kw.test.all.eff.size <- df_stat_melt %>% 
+  group_by(variable) %>% 
+  kruskal_effsize(value ~ timepoint) 
+combine.kw <- kw.test.all %>% 
+  left_join(kw.test.all.eff.size, by="variable") %>% 
+  filter(p.adj < 0.05)
+
+## Number of variables with p.adj-value <0.05
+length(combine.kw$variable)
+
+## table summarizing effect size of the significant variables 
+table(combine.kw$magnitude)
+
+### Post-hoc analysis dunn's test, pairwise multiple comparisons to check which are significant in pairwise analysis.
+dun.test.pos <- df_stat_melt %>% 
+  group_by(variable) %>% 
+  dunn_test(value ~ timepoint, p.adjust.method = "BH", detailed = TRUE)
+dun.test.all.d2 <- dun.test.pos
+dun.test.pos <- dun.test.pos %>% 
+  filter(p.adj<0.05) # %>% 
+  #rename(cluster_number_1 = group1) %>% 
+  #rename(cluster_number_2 = group2)
+dun.test.pos
+
+## P VALUE 
+truc_diff_d0_d2 <- dun.test.pos %>% 
+  left_join(truc_d2d0_fc_median, by="variable") %>%
+  arrange(-desc(p.adj))
+
+truc_diff_d0_d2_t10_per_pfc <- truc_diff_d0_d2 %>% 
+  filter(!grepl('_num', variable)) %>%
+  dplyr::select(variable,p.adj,fc) %>% 
+  slice(1:10)
+
+truc_diff_d0_d2_t10_num_pfc <- truc_diff_d0_d2 %>% 
+  filter(!grepl('_per', variable)) %>%
+  dplyr::select(variable,p.adj,fc) %>% 
+  slice(1:10)
+
+```
+
+## day 0 & day 7
+```{r}
+## select the dataset
+df_stat <- truc_all %>%
+  filter(timepoint %!in% "B") %>%
+  dplyr::select(-dplyr::contains(c("plasmablast_IgD"))) %>%
+  dplyr::select(-dplyr::contains(c("CD56neg"))) 
+
+
+## melt
+df_stat_melt <- df_stat %>% 
+  reshape2::melt(.)
+
+### kruskal.test and Dunn's test
+## With kruskal.test we identify overall which subsets are significant and then Dunn's test tells us which are different between pairs of clusters
+kw.test.all <- df_stat_melt %>% 
+  group_by(variable) %>% 
+  kruskal_test(value ~ timepoint) %>% 
+  adjust_pvalue(method = "BH") 
+kw.test.all.eff.size <- df_stat_melt %>% 
+  group_by(variable) %>% 
+  kruskal_effsize(value ~ timepoint) 
+combine.kw <- kw.test.all %>% 
+  left_join(kw.test.all.eff.size, by="variable") %>% 
+  filter(p.adj < 0.05)
+
+## Number of variables with p.adj-value <0.05
+length(combine.kw$variable)
+
+## table summarizing effect size of the significant variables 
+table(combine.kw$magnitude)
+
+### Post-hoc analysis dunn's test, pairwise multiple comparisons to check which are significant in pairwise analysis.
+dun.test.pos <- df_stat_melt %>% 
+  group_by(variable) %>% 
+  dunn_test(value ~ timepoint, p.adjust.method = "BH", detailed = TRUE)
+dun.test.all.d7 <- dun.test.pos
+dun.test.pos <- dun.test.pos %>% 
+  filter(p.adj<0.05) # %>% 
+  #rename(cluster_number_1 = group1) %>% 
+  #rename(cluster_number_2 = group2)
+dun.test.pos
+
+## P VALUE 
+truc_diff_d0_d7 <- dun.test.pos %>% 
+  left_join(truc_d7d0_fc_median, by="variable") %>%
+  arrange(-desc(p.adj))
+
+truc_diff_d0_d7_t10_per_pfc <- truc_diff_d0_d7 %>% 
+  filter(!grepl('_num', variable)) %>%
+  dplyr::select(variable,p.adj,fc) %>% 
+  slice(1:10)
+
+truc_diff_d0_d7_t10_num_pfc <- truc_diff_d0_d7 %>% 
+  filter(!grepl('_per', variable)) %>%
+  dplyr::select(variable,p.adj,fc) %>% 
+  slice(1:10)
+
+truc_diff_d0_d7%>%
+  arrange(desc(abs(fc))) %>%
+  dplyr::select(variable,fc,p.adj)
+```
+
+## combine the results for top 10 significant subsets and save as xlsx (Table 1)
+```{r}
+truc_kin_pval_fc_d2 <- cbind(truc_diff_d0_d2_t10_per_pfc,truc_diff_d0_d2_t10_num_pfc)
+truc_kin_pval_fc_d7 <- cbind(truc_diff_d0_d7_t10_per_pfc,truc_diff_d0_d7_t10_num_pfc)
+
+writexl::write_xlsx(truc_kin_pval_fc_d2, paste0(analysis.path, "/results/tables/truc_kin_pval_fc_d2_top10.xlsx", sep=""))
+writexl::write_xlsx(truc_kin_pval_fc_d7, paste0(analysis.path, "/results/tables/truc_kin_pval_fc_d7_top10.xlsx", sep=""))
+```
+## combine the results for all significant subsets and save as xlsx (Supplementary Table 1)
+```{r}
+writexl::write_xlsx(rbind(dun.test.all.d2,dun.test.all.d7), paste0(analysis.path, "/results/tables/truc_kin_fc_d7_d2_all.xlsx", sep=""))
+```
+
+# Pre-/post-vaccination immune subset changes, plots for post-vaccination kinetics of immune subsets (Figure 3a-e)
+## data organization
+```{r}
+variables.to.plot <- colnames(vital.truc_influ_additional)[3:ncol(vital.truc_influ_additional)]
+
+first_df <- vital.truc_influ %>%
+  left_join(influ_truc_additional, by="sample_identifier") %>%
+    dplyr::select(sample_identifier, 
+                  timepoint, 
+                  !!!syms(variables.to.plot)) %>% 
+    reshape2::melt() %>%
+  mutate(timepoint= ifelse(timepoint=="A", "Day 0", ifelse(timepoint =="B", "Day 1-2", ifelse(timepoint =="C", "Day 7", NA))))
+```
+
+## CD4_CXCR5+CD38+_per
+```{r}
+i<-"CD4_CXCR5+CD38+_per"
+sub_df <- subset(first_df, variable == i)
+library(gghalves)
+n1<-ggplot(sub_df)+
+  geom_point( 
+    aes(x = timepoint,y = value, group = timepoint, color=timepoint),
+    position = position_jitter(width = 0.1,seed =42),  
+    size = 1.5,
+    alpha = .2, 
+    show.legend = FALSE
+    )+
+  geom_half_violin(
+    aes(x = timepoint,y = value, group = timepoint, fill=timepoint),
+    alpha = .5, 
+    side = "r",
+    position = position_nudge(0.13), 
+  )+
+  geom_half_boxplot(
+    aes(x = timepoint,y = value, group = timepoint, fill=timepoint),
+    alpha = .5, 
+    side = "l", 
+    outlier.shape = NA,
+    center = FALSE,
+    errorbar.draw = FALSE, 
+    width = .4,
+    position = position_nudge(-0.13), 
+  )+
+  theme_classic()+
+  stat_summary(aes(y=value, x=timepoint),size=0.2,
+               position = position_nudge(-0.23))+
+  ylab(i)+
+  xlab("")+
+  scale_fill_manual(" ",values=c("#F0E442", "#85C0F9", "#F5793A"))+
+  scale_color_manual(values=c("#F0E442", "#85C0F9", "#F5793A")) 
+
+
+```
+## plasmablast_CD27+CD38+_per
+```{r}
+i<-"plasmablast_CD27+CD38+_per"
+sub_df <- subset(first_df, variable == i)
+
+n2<-ggplot(sub_df)+
+  geom_point( 
+    aes(x = timepoint,y = value, group = timepoint, color=timepoint),
+    position = position_jitter(width = 0.1,seed =42),  
+    size = 1.5,
+    alpha = .2, 
+    show.legend = FALSE
+    )+
+  geom_half_violin(
+    aes(x = timepoint,y = value, group = timepoint, fill=timepoint),
+    alpha = .5, 
+    side = "r",
+    position = position_nudge(0.13), 
+  )+
+  geom_half_boxplot(
+    aes(x = timepoint,y = value, group = timepoint, fill=timepoint),
+    alpha = .5, 
+    side = "l", 
+    outlier.shape = NA,
+    center = FALSE,
+    errorbar.draw = FALSE, 
+    width = .4,
+    position = position_nudge(-0.13), 
+  )+
+  theme_classic()+
+  stat_summary(aes(y=value, x=timepoint),size=0.2,
+               position = position_nudge(-0.23))+
+  ylab(i)+
+  xlab("")+
+  scale_fill_manual(" ",values=c("#F0E442", "#85C0F9", "#F5793A"))+
+  scale_color_manual(values=c("#F0E442", "#85C0F9", "#F5793A")) +
+  scale_y_log10()
+
+
+```
+## CD4_CXCR5+_Tn_per
+```{r}
+i<-"CD4_CXCR5+_Tn_per"
+sub_df <- subset(first_df, variable == i)
+
+n3<-ggplot(sub_df)+
+  geom_point( 
+    aes(x = timepoint,y = value, group = timepoint, color=timepoint),
+    position = position_jitter(width = 0.1,seed =42),  
+    size = 1.5,
+    alpha = .2, 
+    show.legend = FALSE
+    )+
+  geom_half_violin(
+    aes(x = timepoint,y = value, group = timepoint, fill=timepoint),
+    alpha = .5, 
+    side = "r",
+    position = position_nudge(0.13), 
+  )+
+  geom_half_boxplot(
+    aes(x = timepoint,y = value, group = timepoint, fill=timepoint),
+    alpha = .5, 
+    side = "l", 
+    outlier.shape = NA,
+    center = FALSE,
+    errorbar.draw = FALSE, 
+    width = .4,
+    position = position_nudge(-0.13), 
+  )+
+  theme_classic()+
+  stat_summary(aes(y=value, x=timepoint),size=0.2,
+               position = position_nudge(-0.23))+
+  ylab(i)+
+  xlab("")+
+  scale_fill_manual(" ",values=c("#F0E442", "#85C0F9", "#F5793A"))+
+  scale_color_manual(values=c("#F0E442", "#85C0F9", "#F5793A")) 
+
+
+```
+## CD56dim_CD38+HLADR+_per
+```{r}
+i<-"CD56dim_CD38+HLADR+_per"
+sub_df <- subset(first_df, variable == i)
+
+n4<-ggplot(sub_df)+
+  geom_point( 
+    aes(x = timepoint,y = value, group = timepoint, color=timepoint),
+    position = position_jitter(width = 0.1,seed =42),  
+    size = 1.5,
+    alpha = .2, 
+    show.legend = FALSE
+    )+
+  geom_half_violin(
+    aes(x = timepoint,y = value, group = timepoint, fill=timepoint),
+    alpha = .5, 
+    side = "r",
+    position = position_nudge(0.13), 
+  )+
+  geom_half_boxplot(
+    aes(x = timepoint,y = value, group = timepoint, fill=timepoint),
+    alpha = .5, 
+    side = "l", 
+    outlier.shape = NA,
+    center = FALSE,
+    errorbar.draw = FALSE, 
+    width = .4,
+    position = position_nudge(-0.13), 
+  )+
+  theme_classic()+
+  stat_summary(aes(y=value, x=timepoint),size=0.2,
+               position = position_nudge(-0.23))+
+  ylab(i)+
+  xlab("")+
+  scale_fill_manual(" ",values=c("#F0E442", "#85C0F9", "#F5793A"))+
+  scale_color_manual(values=c("#F0E442", "#85C0F9", "#F5793A"))+
+  scale_y_log10()
+
+
+```
+## monocytes_nonclassical_per
+```{r}
+i<-"monocytes_nonclassical_per"
+sub_df <- subset(first_df, variable == i)
+
+n5<-ggplot(sub_df)+
+  geom_point( 
+    aes(x = timepoint,y = value, group = timepoint, color=timepoint),
+    position = position_jitter(width = 0.1,seed =42),  
+    size = 1.5,
+    alpha = .2, 
+    show.legend = FALSE
+    )+
+  geom_half_violin(
+    aes(x = timepoint,y = value, group = timepoint, fill=timepoint),
+    alpha = .5, 
+    side = "r",
+    position = position_nudge(0.13), 
+  )+
+  geom_half_boxplot(
+    aes(x = timepoint,y = value, group = timepoint, fill=timepoint),
+    alpha = .5, 
+    side = "l", 
+    outlier.shape = NA,
+    center = FALSE,
+    errorbar.draw = FALSE, 
+    width = .4,
+    position = position_nudge(-0.13), 
+  )+
+  theme_classic()+
+  stat_summary(aes(y=value, x=timepoint),size=0.2,
+               position = position_nudge(-0.23))+
+  ylab(i)+
+  xlab("")+
+  scale_fill_manual(" ",values=c("#F0E442", "#85C0F9", "#F5793A"))+
+  scale_color_manual(values=c("#F0E442", "#85C0F9", "#F5793A")) 
+n5
+```
+
+
+## merge plots 
+```{r}
+pdf(file = paste0("results/figures/postvac_kinetics/postvac_kin_sel.pdf", sep=""), width =7 , height =6)
+egg::ggarrange(n1+ theme(legend.position = "none"),
+               n2+ theme(legend.position = "none"), 
+               n3+ theme(legend.position = "none"),
+               n4+ theme(legend.position = "none"), 
+               n5+ theme(legend.position = "none"), 
+               ncol = 2)
+dev.off()
+
+
+```
+
+
+# Correlations between day 0 immune subsets & day 1-2, day 7 immune subsets (Supp.Table 2)
+## day 0 immune subsets & day 1-2/ immune subsets
+```{r}
+subjectID_d0_d12 <- intersect(truc_d0$subject_identifier,truc_d12d0_log2$subject_identifier)
+
+df_mod_d0 <- truc_d0 %>%
+  filter(subject_identifier %in% subjectID_d0_d12) %>%
+  column_to_rownames(var="subject_identifier") %>%
+  as.data.frame() 
+
+df_mod_d12d0 <- truc_d12d0_log2 %>%
+  filter(subject_identifier %in% subjectID_d0_d12) %>%
+  column_to_rownames(var="subject_identifier") %>%
+  as.data.frame() 
+
+cor_truc_d0_d12d0 <- data.frame(matrix(ncol = 4, nrow =0))
+
+for (i in 1:ncol(df_mod_d0)){
+  mod_cor <- cor.test(df_mod_d0[[i]], df_mod_d12d0[[i]],method = c("spearman"),exact = FALSE )
+  x <- cbind(names(df_mod_d0[i]),names(df_mod_d12d0[i]),mod_cor$p.value,mod_cor$estimate[[1]])
+  cor_truc_d0_d12d0<-rbind(cor_truc_d0_d12d0,x)
+}
+
+names(cor_truc_d0_d12d0) <- c("immune_subset_day0","comparison","p","rho")
+cor_truc_d0_d12d0 <- cor_truc_d0_d12d0 %>%
+  mutate_at(c("p","rho"), list(~as.numeric(.))) 
+
+# cor_truc_d0_d12d0 <- cor_truc_d0_d12d0 %>% 
+#   adjust_pvalue(method = "BH", p.col = "p") 
+```
+## day 0 immune subsets & day 7 immune subsets
+```{r}
+subjectID_d0_d7 <- intersect(truc_d0$subject_identifier,truc_d7d0_log2$subject_identifier)
+
+df_mod_d0 <- truc_d0 %>%
+  filter(subject_identifier %in% subjectID_d0_d7) %>%
+  column_to_rownames(var="subject_identifier") %>%
+  as.data.frame() 
+
+df_mod_d7d0 <- truc_d7d0_log2 %>%
+  filter(subject_identifier %in% subjectID_d0_d7) %>%
+  column_to_rownames(var="subject_identifier") %>%
+  as.data.frame() 
+
+cor_truc_d0_d7d0 <- data.frame(matrix(ncol = 4, nrow =0))
+
+for (i in 1:ncol(df_mod_d0)){
+  mod_cor <- cor.test(df_mod_d0[[i]], df_mod_d7d0[[i]],method = c("spearman"),exact = FALSE )
+  x <- cbind(names(df_mod_d0[i]),names(df_mod_d7d0[i]),mod_cor$p.value,mod_cor$estimate[[1]])
+  cor_truc_d0_d7d0<-rbind(cor_truc_d0_d7d0,x)
+}
+
+names(cor_truc_d0_d7d0) <- c("immune_subset_day0","comparison","p","rho")
+cor_truc_d0_d7d0 <- cor_truc_d0_d7d0 %>%
+  mutate_at(c("p","rho"), list(~as.numeric(.))) 
+
+# cor_truc_d0_d7d0 <- cor_truc_d0_d7d0 %>%
+#   adjust_pvalue(method = "BH", p.col = "p") 
+```
+## combine correlation results and save as a table (Supp.Table 2)
+```{r}
+cor_truc_d0_d12d0_d7d0 <- rbind(cor_truc_d0_d12d0,cor_truc_d0_d7d0) %>%
+  adjust_pvalue(method = "bonferroni", p.col = "p") 
+cor_truc_d0_d12d0_d7d0 %>% filter(p.adj<=0.001) %>% filter(abs(rho)>0.2)
+
+writexl::write_xlsx(cor_truc_d0_d12d0_d7d0, paste0(analysis.path, "/results/tables/cor_truc_d0_d12d0_d7d0.xlsx", sep=""))
+
+```
+
+## plot the correlations
+```{r}
+
+## plot x axis ordered by rho, plotting rho on y axis
+m <-cor_truc_d0_d12d0_d7d0 %>%
+  mutate(name = fct_reorder(immune_subset_day0, rho)) %>%
+  ggplot(aes(x=name, y=rho, color=rho)) +
+  geom_point()+
+  scale_colour_gradient2(
+    low = "red", 
+    mid = "grey",
+    high = "blue", 
+    midpoint = 0, 
+    guide = "colourbar")+
+  theme_classic()+
+  theme(legend.position="bottom",
+        axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank())
+m
+
+## plot x axis ordered by rho, plotting adjusted p values on y axis
+n <-cor_truc_d0_d12d0_d7d0 %>%
+  mutate(name = fct_reorder(immune_subset_day0, rho)) %>%
+  ggplot(aes(x=name, y=-log10(p.adj), color=rho)) +
+  geom_point() +  
+  scale_colour_gradient2(
+    low = "red", 
+    mid = "grey",
+    high = "blue", 
+    midpoint = 0, 
+    guide = "colourbar")+ 
+  theme_classic() +
+  theme(legend.position="none",
+        axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank())+
+  geom_hline(yintercept=3, linetype="dashed", 
+                color = "black", size=0.8)
+  
+n
+
+
+## arrange the figures in a plot
+ggarrange_1 <- egg::ggarrange(n,m,ncol=1) 
+
+## save figures
+pdf(file =  "subset_kinetics_cor_p.pdf", width =7 , height =5) ; ggarrange_1 ; dev.off() #save as a pdf
+```
+
+# Logistic regression for being a sero-responder, based on age groups, sex, CMV, and pre-existing HI titers (Figure 2d)
+```{r}
+df_model <- df_model_2 %>%
+  dplyr::mutate(`Day 0 HI titer` = dplyr::recode(T0_l3, "1"=":: <40",  "2"=":: 40-80",  "3"=":: >80",),
+                sex = dplyr::recode(sex, "1"=":: Male",  "2"=":: Female"),
+                age_group = dplyr::recode(age_group, "1"=":: Young adults",  "2"=":: Middle-aged adults", "3"=":: Older adults"),
+                CMV = dplyr::recode(CMV, "1"=":: (+)",  "2"=":: (-)"))
+
+
+## model
+m2 = glm(sero_res2 == "responder" ~    sex  + CMV + `Day 0 HI titer`, data = df_model, family = "binomial")
+m2_preds = tidy(m2, conf.int = TRUE, exponentiate = TRUE) %>%
+    mutate(Model = "m2")
+
+## plot
+pdf(file = paste0(models.dir, "glm_responder_day0HI.pdf", sep=""), width =3.9 , height =2.7)
+ggplot(m2_preds, aes(y = estimate, x = term)) +
+  geom_pointrange(aes(ymin = conf.low, ymax = conf.high),
+                  size = 0.5) +
+  geom_hline(yintercept = 1.0, linetype = "dotted", size = 1) +
+  scale_y_log10(breaks = c( 0.1, 0.2, 0.5, 1.0, 2.0, 5.0),
+                minor_breaks = NULL) +
+  labs(y = "Odds ratio", x = "") +
+  coord_flip() +
+  theme_classic()+  
+  theme(legend.position = "none")
+dev.off()
+
+summary(m2)
+exp(coef(m2))
+
+```
+
+
+# Linear regression models for post-vaccination immune subset fold change ~ sex, pre-existing HI titers, CMV (Supp.Table 3)
+```{r}
+# First, let's load the necessary libraries
+
+
+# Next, let's create some example data
+df_mod <- df_model_5 %>% 
+  left_join(df_model_9) %>%
+  drop_na(GMT_T0)
+
+names(df_mod) <- gsub(x = names(df_mod), pattern = "\\+", replacement = "p")
+names(df_mod) <- gsub(x = names(df_mod), pattern = "\\-", replacement = "n")
+
+# Now, let's iterate through the immune subset variables and build a linear regression model for each one
+immune_subsets <- colnames(df_mod)[c(26:ncol(df_mod))] 
+
+# Build linear regression models for each immune subset variable
+results_lm <- map_dfr(immune_subsets, ~{
+  formula <- as.formula(paste(.x, "~ sex + CMV + T0_l3"))
+  lm(formula, data = df_mod) %>%
+    tidy() %>%
+    mutate(subset = .x)
+}, .id = "model_id")
+
+# Clean up the results data frame
+results_lm <- dplyr::select(results_lm, model_id, subset,term,estimate, p.value) %>%
+  filter(term %!in% "(Intercept)") %>%
+  group_by(subset) %>%
+  mutate(p.adj = p.adjust(p.value, method = "BH", n = length(immune_subsets))) %>%
+  filter(p.value < 0.05)
+writexl::write_xlsx(results_lm, paste0(analysis.path, "/results/tables/model_truc_fc_HI.xlsx", sep=""))
+
+```
+# Pre-/post-vaccination HI titers in immunotypes (Figure 4a-c)
+## plot
+```{r}
+## saving figures
+df_loop <- HI_immunotype%>%
+  dplyr::select(cluster_number, GMT_T0, GMT_T4, GMT_T4T0) %>%
+  drop_na(cluster_number)
+Xaxis <- df_loop$cluster_number
+n <- ncol(df_loop)
+Groups <- df_loop$cluster_number
+
+## linear axis loop
+for (i in c(2:n)){ #select the column data starts 
+  Yaxis <- df_loop[[i]]
+  y_title <- colnames(df_loop[i])
+  p <- boxplot_cluster()+labs(title="",x="Immunotypes",y = y_title)
+  
+  pdf(file = paste0(HI_titer_immunotype.dir, paste("HI_cluster_", y_title, "_lin.pdf", sep = ""), sep=""), width =4 , height =3) 
+  print(p)
+  dev.off()
+}
+
+
+```
+
+## statistical test GMT_T0 between immunotypes
+```{r}
+## select the dataset
+df_stat <- HI_immunotype 
+
+## subject identifier and cluster number as.character
+df_stat %<>% mutate_at(
+  c("subject_identifier","cluster_number"),
+  list(~as.character(.)))
+
+## melt
+df_stat_melt <- df_stat %>%
+  dplyr::select(subject_identifier,cluster_number,GMT_T0)%>%
+  reshape2::melt(.)
+
+### kruskal.test and Dunn's test
+## With kruskal.test we identify overall which subsets are significant and then Dunn's test tells us which are different between pairs of clusters
+kw.test.all <- df_stat_melt %>% 
+  group_by(variable) %>% 
+  kruskal_test(value ~ cluster_number) %>% 
+  adjust_pvalue(method = "BH") 
+kw.test.all.eff.size <- df_stat_melt %>% 
+  group_by(variable) %>% 
+  kruskal_effsize(value ~ cluster_number) 
+combine.kw <- kw.test.all %>% 
+  left_join(kw.test.all.eff.size, by="variable")
+combine.kw
+
+```
+
+## statistical test GMT_T4 between immunotypes
+```{r}
+
+## select the dataset
+df_stat <- HI_immunotype 
+
+## subject identifier and cluster number as.character
+df_stat %<>% mutate_at(
+  c("subject_identifier","cluster_number"),
+  list(~as.character(.)))
+
+## melt
+df_stat_melt <- df_stat %>%
+  dplyr::select(subject_identifier,cluster_number,GMT_T4)%>%
+  reshape2::melt(.)
+
+### kruskal.test and Dunn's test
+## With kruskal.test we identify overall which subsets are significant and then Dunn's test tells us which are different between pairs of clusters
+kw.test.all <- df_stat_melt %>% 
+  group_by(variable) %>% 
+  kruskal_test(value ~ cluster_number) %>% 
+  adjust_pvalue(method = "BH") 
+kw.test.all.eff.size <- df_stat_melt %>% 
+  group_by(variable) %>% 
+  kruskal_effsize(value ~ cluster_number) 
+combine.kw <- kw.test.all %>% 
+  left_join(kw.test.all.eff.size, by="variable")
+combine.kw
+
+```
+
+## statistical test GMT_T4T0 between immunotypes
+```{r}
+
+## select the dataset
+df_stat <- HI_immunotype 
+
+## subject identifier and cluster number as.character
+df_stat %<>% mutate_at(
+  c("subject_identifier","cluster_number"),
+  list(~as.character(.)))
+
+## melt
+df_stat_melt <- df_stat %>%
+  dplyr::select(subject_identifier,cluster_number,GMT_T4T0)%>%
+  reshape2::melt(.)
+
+### kruskal.test and Dunn's test
+## With kruskal.test we identify overall which subsets are significant and then Dunn's test tells us which are different between pairs of clusters
+kw.test.all <- df_stat_melt %>% 
+  group_by(variable) %>% 
+  kruskal_test(value ~ cluster_number) %>% 
+  adjust_pvalue(method = "BH") 
+kw.test.all.eff.size <- df_stat_melt %>% 
+  group_by(variable) %>% 
+  kruskal_effsize(value ~ cluster_number) 
+combine.kw <- kw.test.all %>% 
+  left_join(kw.test.all.eff.size, by="variable")
+combine.kw
+
+```
+
+
+
+
+# Sero-responder categorization in immunotypes (Figure 4d)
+## plot
+```{r}
+plot_1 <- HI_immunotype %>% 
+  ggplot(aes(group = sero_res3, y=1, x=cluster_number, fill=sero_res3))+
+  geom_bar(position="fill", stat="identity")+
+  xlab("Immunotypes") + ylab("Abundance")+
+  scale_fill_manual(values = c("#E13945","#FF8C42","#6699CC"))+
+  theme_classic()+
+  scale_y_continuous(labels = scales::percent)
+
+plot_2 <- HI_immunotype %>%
+  ggplot(aes(group = sero_res3, y=1, x=strain, fill=sero_res3))+
+  geom_bar(position="fill", stat="identity")+
+  xlab("Total") + ylab("")+
+  scale_fill_manual(values = c("#E13945","#FF8C42","#6699CC"))+
+  theme_classic()+
+  scale_y_continuous(labels = scales::percent)
+
+plot_2 <- ggpubr::ggarrange(plot1, plot2,ncol = 2, nrow = 1,common.legend= TRUE,widths = c(3.5, 1))
+plot_2
+
+pdf(file = paste0(HI_res_immunotype.dir, "immunotype_3resp_profile.pdf", sep=""), width =6.5 , height =3) ; egg::ggarrange(plot_1, plot_2, ncol=2) ; dev.off()
+
+```
+## statistical test comparing sero_res3 (sero responder non,low,high) groups in immunotypes
+```{r}
+## Chi squared test
+chisq.dat <- HI_immunotype %>% 
+  group_by(cluster_number,sero_res3) %>%
+  summarise(counts = n()) %>%
+  pivot_wider(names_from = sero_res3, values_from = counts, values_fill = 0)
+
+
+# Perform a chi-squared test
+chi_sq_test <- chisq.test(chisq.dat[, "high_responder"])
+
+# Print the results
+print(chi_sq_test)
+
+chisq.test(chisq.dat[, "high_responder"])$expected
+
+
+## Fisher exact test
+fisher.test(as.data.frame(chisq.dat[,-1]), simulate.p.value = TRUE)
+
+```
+
+
+# GAMLSS Models - Day 28 HI titers ~ immunotypes (Figure 4e)
+```{r}
+df_model <- df_model_3 %>% #dataset with clusters
+    dplyr::mutate(`Day 0 HI titer` = dplyr::recode(T0_l3, "1"=":: <40",  "2"=":: 40-80",  "3"=":: >80",),
+                sex = dplyr::recode(sex, "1"=":: Male",  "2"=":: Female"),
+                CMV = dplyr::recode(CMV, "1"=":: (+)",  "2"=":: (-)")) %>%
+  droplevels()
+df_model$CMV <- factor(df_model$CMV, levels = c(":: (-)",":: (+)"))
+
+# Create new variables for each cluster
+for (i in 1:9) {
+  df_model[[paste0('cluster_', i)]] <- ifelse(df_model$cluster_number == i, 1, 0)}
+```
+
+## run models
+```{r}
+for (i in 1:9){
+  model_name <- paste0("model_gaml_T4_c", i)
+  formula_str <- paste0("GMT_T4 ~ sex + CMV + `Day 0 HI titer` + factor(cluster_", i, ")")
+  
+  model <- gamlss(as.formula(formula_str), data=df_model, family=NBI())
+  
+  assign(model_name, model, envir = .GlobalEnv)
+  
+  print(summary(get(model_name)))
+}
+
+```
+
+## plot models comparing immunotypes
+```{r}
+pdf(file = paste0(models.dir, "gaml_T4_c1_9.pdf", sep=""), width =3.5 , height =3.0)
+dwplot(list(model_gaml_T4_c1, 
+            model_gaml_T4_c2, 
+            model_gaml_T4_c3, 
+            model_gaml_T4_c4, 
+            model_gaml_T4_c5, 
+            model_gaml_T4_c6, 
+            model_gaml_T4_c7, 
+            model_gaml_T4_c8,
+            model_gaml_T4_c9), 
+       show_intercept = FALSE,
+       dot_args = list(aes(color = model)))+
+    geom_vline(xintercept = 0,
+               colour = "grey60",
+               linetype = 2,
+               size=0.2)+
+  theme_classic()+
+  xlab("Coefficient Estimate") + ylab("")+
+  theme(legend.position='none')
+
+dev.off()
+```
+
+
+```{r}
+
+mod_fit1<-summary(model_gaml_T4_c1, save=TRUE)
+as.list(mod_fit1$pvalue)$Immunotype1
+
+mod_fit2<-summary(model_gaml_T4_c2, save=TRUE)
+as.list(mod_fit2$pvalue)$Immunotype2
+
+mod_fit3<-summary(model_gaml_T4_c3, save=TRUE)
+as.list(mod_fit3$pvalue)$Immunotype3
+
+mod_fit4<-summary(model_gaml_T4_c4, save=TRUE)
+as.list(mod_fit4$pvalue)$Immunotype4
+
+mod_fit5<-summary(model_gaml_T4_c5, save=TRUE)
+as.list(mod_fit5$pvalue)$Immunotype5
+
+mod_fit6<-summary(model_gaml_T4_c6, save=TRUE)
+as.list(mod_fit6$pvalue)$Immunotype6
+
+mod_fit7<-summary(model_gaml_T4_c7, save=TRUE)
+as.list(mod_fit7$pvalue)$Immunotype7
+
+mod_fit8<-summary(model_gaml_T4_c8, save=TRUE)
+as.list(mod_fit8$pvalue)$Immunotype8
+
+mod_fit9<-summary(model_gaml_T4_c9, save=TRUE)
+as.list(mod_fit9)$`Immunotype rest`
+
+
+
+gamlss_immunotype_pval <-rbind(
+  as.list(mod_fit1$pvalue)$`Immunotype1`,
+  as.list(mod_fit2$pvalue)$`Immunotype2`,
+  as.list(mod_fit3$pvalue)$`Immunotype3`,
+  as.list(mod_fit4$pvalue)$`Immunotype4`,
+  as.list(mod_fit5$pvalue)$`Immunotype5`,
+  as.list(mod_fit6$pvalue)$`Immunotype6`,
+  as.list(mod_fit7$pvalue)$`Immunotype7`,
+  as.list(mod_fit8$pvalue)$`Immunotype8`,
+  as.list(mod_fit9$pvalue)$`Immunotype rest`
+  ) %>% 
+  as.data.frame() %>% 
+  rename("p"="V1") %>%
+  adjust_pvalue(method = "BH", p.col = "p") 
+gamlss_immunotype_pval
+```
+
+
+
+
+
+
+
+# Pre-/post-vaccination immune subset differences between immunotypes 2-3-6 (Figure 5a-c)(Supp.Table 5)
+## cluster 2 d0 vs rest
+```{r}
+## select the dataset
+df_stat <- truc_d0 %>%
+  dplyr::select(-dplyr::contains(c("plasmablast_IgD"))) %>%
+  dplyr::select(-dplyr::contains(c("CD56neg"))) %>% 
+  left_join(immunotype, by="subject_identifier") %>%
+  drop_na(cluster_number)%>%
+  mutate(cluster_number = dplyr::recode(cluster_number, 
+                                 "1" = " rest",
+                                 # "2" = " rest",
+                                 "3" = " rest",
+                                 "4" = " rest",
+                                 "5" = " rest",
+                                 "6" = " rest",
+                                 "7" = " rest",
+                                 "8" = " rest",
+                                 "9" = " rest")) %>%
+  droplevels()
+
+## subject identifier and cluster number as.character
+df_stat %<>% mutate_at(
+  c("subject_identifier","cluster_number"),
+  list(~as.character(.)))
+
+## melt
+df_stat_melt <- df_stat %>% 
+  reshape2::melt(.)
+
+### kruskal.test and Dunn's test
+## With kruskal.test we identify overall which subsets are significant and then Dunn's test tells us which are different between pairs of clusters
+kw.test.all <- df_stat_melt %>% 
+  group_by(variable) %>% 
+  kruskal_test(value ~ cluster_number) %>% 
+  adjust_pvalue(method = "BH") 
+kw.test.all.eff.size <- df_stat_melt %>% 
+  group_by(variable) %>% 
+  kruskal_effsize(value ~ cluster_number) 
+combine.kw <- kw.test.all %>% 
+  left_join(kw.test.all.eff.size, by="variable") %>% 
+  filter(p.adj < 0.05)
+
+## Number of variables with p.adj-value <0.05
+length(combine.kw$variable)
+
+## table summarizing effect size of the significant variables 
+table(combine.kw$magnitude)
+
+### Post-hoc analysis dunn's test, pairwise multiple comparisons to check which are significant in pairwise analysis.
+dun.test.pos <- df_stat_melt %>% 
+  group_by(variable) %>% 
+  dunn_test(value ~ cluster_number, p.adjust.method = "BH", detailed = TRUE)
+dun.test.pos <- dun.test.pos %>% 
+  filter(p.adj<0.05) # %>% 
+  #rename(cluster_number_1 = group1) %>% 
+  #rename(cluster_number_2 = group2)
+dun.test.pos
+imm2_vs_rest_trucd0_result <- dun.test.pos
+imm2_vs_rest_trucd0_var <- unique(dun.test.pos$variable)
+
+```
+## cluster 3 d0 vs rest 
+```{r}
+## select the dataset
+df_stat <- truc_d0 %>%
+  dplyr::select(-dplyr::contains(c("plasmablast_IgD"))) %>%
+  dplyr::select(-dplyr::contains(c("CD56neg"))) %>% 
+  left_join(immunotype, by="subject_identifier") %>%
+  drop_na(cluster_number)%>%
+  mutate(cluster_number = dplyr::recode(cluster_number, 
+                                 "1" = " rest",
+                                 "2" = " rest",
+                                 # "3" = " rest",
+                                 "4" = " rest",
+                                 "5" = " rest",
+                                 "6" = " rest",
+                                 "7" = " rest",
+                                 "8" = " rest",
+                                 "9" = " rest")) %>%
+  droplevels()
+
+## subject identifier and cluster number as.character
+df_stat %<>% mutate_at(
+  c("subject_identifier","cluster_number"),
+  list(~as.character(.)))
+
+## melt
+df_stat_melt <- df_stat %>% 
+  reshape2::melt(.)
+
+### kruskal.test and Dunn's test
+## With kruskal.test we identify overall which subsets are significant and then Dunn's test tells us which are different between pairs of clusters
+kw.test.all <- df_stat_melt %>% 
+  group_by(variable) %>% 
+  kruskal_test(value ~ cluster_number) %>% 
+  adjust_pvalue(method = "BH") 
+kw.test.all.eff.size <- df_stat_melt %>% 
+  group_by(variable) %>% 
+  kruskal_effsize(value ~ cluster_number) 
+combine.kw <- kw.test.all %>% 
+  left_join(kw.test.all.eff.size, by="variable") %>% 
+  filter(p.adj < 0.05)
+
+## Number of variables with p.adj-value <0.05
+length(combine.kw$variable)
+
+## table summarizing effect size of the significant variables 
+table(combine.kw$magnitude)
+
+### Post-hoc analysis dunn's test, pairwise multiple comparisons to check which are significant in pairwise analysis.
+dun.test.pos <- df_stat_melt %>% 
+  group_by(variable) %>% 
+  dunn_test(value ~ cluster_number, p.adjust.method = "BH", detailed = TRUE)
+dun.test.pos <- dun.test.pos %>% 
+  filter(p.adj<0.05) # %>% 
+  #rename(cluster_number_1 = group1) %>% 
+  #rename(cluster_number_2 = group2)
+dun.test.pos
+imm3_vs_rest_trucd0_result <- dun.test.pos
+
+imm3_vs_rest_trucd0_var <- unique(dun.test.pos$variable)
+
+```
+## cluster 6 d0 vs rest
+```{r}
+## select the dataset
+df_stat <- truc_d0 %>%
+  dplyr::select(-dplyr::contains(c("plasmablast_IgD"))) %>%
+  dplyr::select(-dplyr::contains(c("CD56neg"))) %>% 
+  left_join(immunotype, by="subject_identifier") %>%
+  drop_na(cluster_number)%>%
+  mutate(cluster_number = dplyr::recode(cluster_number, 
+                                 "1" = " rest",
+                                 "2" = " rest",
+                                 "3" = " rest",
+                                 "4" = " rest",
+                                 "5" = " rest",
+                                 # "6" = " rest",
+                                 "7" = " rest",
+                                 "8" = " rest",
+                                 "9" = " rest"))%>%
+  droplevels()
+
+## subject identifier and cluster number as.character
+df_stat %<>% mutate_at(
+  c("subject_identifier","cluster_number"),
+  list(~as.character(.)))
+
+## melt
+df_stat_melt <- df_stat %>% 
+  reshape2::melt(.)
+
+### kruskal.test and Dunn's test
+## With kruskal.test we identify overall which subsets are significant and then Dunn's test tells us which are different between pairs of clusters
+kw.test.all <- df_stat_melt %>% 
+  group_by(variable) %>% 
+  kruskal_test(value ~ cluster_number) %>% 
+  adjust_pvalue(method = "BH") 
+kw.test.all.eff.size <- df_stat_melt %>% 
+  group_by(variable) %>% 
+  kruskal_effsize(value ~ cluster_number) 
+combine.kw <- kw.test.all %>% 
+  left_join(kw.test.all.eff.size, by="variable") %>% 
+  filter(p.adj < 0.05)
+
+## Number of variables with p.adj-value <0.05
+length(combine.kw$variable)
+
+## table summarizing effect size of the significant variables 
+table(combine.kw$magnitude)
+
+### Post-hoc analysis dunn's test, pairwise multiple comparisons to check which are significant in pairwise analysis.
+dun.test.pos <- df_stat_melt %>% 
+  group_by(variable) %>% 
+  dunn_test(value ~ cluster_number, p.adjust.method = "BH", detailed = TRUE)
+dun.test.pos <- dun.test.pos %>% 
+  filter(p.adj<0.05) # %>% 
+  #rename(cluster_number_1 = group1) %>% 
+  #rename(cluster_number_2 = group2)
+dun.test.pos
+imm6_vs_rest_trucd0_result <- dun.test.pos
+imm6_vs_rest_trucd0_var <- unique(dun.test.pos$variable)
+
+```
+## d0 heatmap
+### data organization
+```{r}
+temp1<- influ_imm2_rest_d0_log2_fc_mean_top %>% 
+  add_column(.before = "V1", immunotype="2")
+temp2<-influ_imm3_rest_d0_log2_fc_mean_top %>% 
+  add_column(.before = "V1", immunotype="3")
+temp3<-influ_imm6_rest_d0_log2_fc_mean_top %>% 
+  add_column(.before = "V1", immunotype="6")
+
+df_hm_long <- rbind(temp1,temp2,temp3) 
+
+
+temp1 <- influ_imm2_rest_d0_log2_fc_mean %>% 
+  dplyr::select(intersect(df_hm_long$subsets,as.character(imm2_vs_rest_trucd0_var)))%>% 
+  add_column(.before = "CD8+_CD95-HLADR+_D0_per", immunotype="2")%>%  
+  pivot_longer(!immunotype, names_to ="subsets", values_to = "V1")
+
+temp2 <- influ_imm3_rest_d0_log2_fc_mean %>% 
+  dplyr::select(intersect(df_hm_long$subsets,as.character(imm3_vs_rest_trucd0_var)))%>% 
+  add_column(.before = "CD4_Tcm_CD95-HLADR+_D0_per", immunotype="3")%>%  
+  pivot_longer(!immunotype, names_to ="subsets", values_to = "V1")
+
+temp3 <- influ_imm6_rest_d0_log2_fc_mean %>% 
+  dplyr::select(intersect(df_hm_long$subsets,as.character(imm6_vs_rest_trucd0_var)))%>% 
+  add_column(.before = "CD8+_CD95-HLADR+_D0_per", immunotype="6")%>%  
+  pivot_longer(!immunotype, names_to ="subsets", values_to = "V1")
+
+df_hm_long <- rbind(temp1,temp2,temp3) 
+# df_hm_long$V1 <- 2^df_hm_long$V1
+df_hm_long$immunotype <- as.factor(df_hm_long$immunotype)
+
+df_hm_long <- df_hm_long %>% arrange(desc(immunotype))
+
+```
+
+### generate and save heatmap
+```{r}
+hm1<-ggplot(df_hm_long, aes(x=immunotype, y=subsets, fill= V1)) + 
+  geom_tile() +
+  theme_classic()+
+  scale_fill_gradient2(
+    low = "red", 
+    mid = "azure1",
+    high = "blue", 
+    midpoint = 0)+
+  theme(legend.position = "bottom")
+hm1
+dev.print(pdf, file = paste0(heatmap.dir, "hm_imm2_3_6_d0_fc.pdf", sep=""), width = 4, height = 10)
+
+```
+
+## cluster 2 d2d0 vs rest
+```{r}
+## select the dataset
+df_stat <- truc_d12d0 %>%
+  dplyr::select(-dplyr::contains(c("plasmablast_IgD"))) %>%
+  dplyr::select(-dplyr::contains(c("CD56neg"))) %>% 
+  left_join(immunotype, by="subject_identifier") %>%
+  drop_na(cluster_number)%>%
+  mutate(cluster_number = dplyr::recode(cluster_number, 
+                                 "1" = " rest",
+                                 # "2" = " rest",
+                                 "3" = " rest",
+                                 "4" = " rest",
+                                 "5" = " rest",
+                                 "6" = " rest",
+                                 "7" = " rest",
+                                 "8" = " rest",
+                                 "9" = " rest"))%>%
+  droplevels()
+
+## subject identifier and cluster number as.character
+df_stat %<>% mutate_at(
+  c("subject_identifier","cluster_number"),
+  list(~as.character(.)))
+
+## melt
+df_stat_melt <- df_stat %>% 
+  reshape2::melt(.)
+
+### kruskal.test and Dunn's test
+## With kruskal.test we identify overall which subsets are significant and then Dunn's test tells us which are different between pairs of clusters
+kw.test.all <- df_stat_melt %>% 
+  group_by(variable) %>% 
+  kruskal_test(value ~ cluster_number) %>% 
+  adjust_pvalue(method = "BH") 
+kw.test.all.eff.size <- df_stat_melt %>% 
+  group_by(variable) %>% 
+  kruskal_effsize(value ~ cluster_number) 
+combine.kw <- kw.test.all %>% 
+  left_join(kw.test.all.eff.size, by="variable") %>% 
+  filter(p.adj < 0.05)
+
+## Number of variables with p.adj-value <0.05
+length(combine.kw$variable)
+
+## table summarizing effect size of the significant variables 
+table(combine.kw$magnitude)
+
+### Post-hoc analysis dunn's test, pairwise multiple comparisons to check which are significant in pairwise analysis.
+dun.test.pos <- df_stat_melt %>% 
+  group_by(variable) %>% 
+  dunn_test(value ~ cluster_number, p.adjust.method = "BH", detailed = TRUE)
+dun.test.pos <- dun.test.pos %>% 
+  filter(p.adj<0.05) # %>% 
+  #rename(cluster_number_1 = group1) %>% 
+  #rename(cluster_number_2 = group2)
+dun.test.pos
+
+imm2_vs_rest_trucd2d0_result <- dun.test.pos
+
+unique(dun.test.pos$variable)
+
+imm2_vs_rest_trucd2d0_var <- unique(dun.test.pos$variable)
+```
+## cluster 3 d2d0 vs rest
+```{r}
+## select the dataset
+df_stat <- truc_d12d0 %>%
+  dplyr::select(-dplyr::contains(c("plasmablast_IgD"))) %>%
+  dplyr::select(-dplyr::contains(c("CD56neg"))) %>% 
+  left_join(immunotype, by="subject_identifier") %>%
+  drop_na(cluster_number)%>%
+  mutate(cluster_number = dplyr::recode(cluster_number, 
+                                 "1" = " rest",
+                                 "2" = " rest",
+                                 # "3" = " rest",
+                                 "4" = " rest",
+                                 "5" = " rest",
+                                 "6" = " rest",
+                                 "7" = " rest",
+                                 "8" = " rest",
+                                 "9" = " rest"))%>%
+  droplevels()
+
+## subject identifier and cluster number as.character
+df_stat %<>% mutate_at(
+  c("subject_identifier","cluster_number"),
+  list(~as.character(.)))
+
+## melt
+df_stat_melt <- df_stat %>% 
+  reshape2::melt(.)
+
+### kruskal.test and Dunn's test
+## With kruskal.test we identify overall which subsets are significant and then Dunn's test tells us which are different between pairs of clusters
+kw.test.all <- df_stat_melt %>% 
+  group_by(variable) %>% 
+  kruskal_test(value ~ cluster_number) %>% 
+  adjust_pvalue(method = "BH") 
+kw.test.all.eff.size <- df_stat_melt %>% 
+  group_by(variable) %>% 
+  kruskal_effsize(value ~ cluster_number) 
+combine.kw <- kw.test.all %>% 
+  left_join(kw.test.all.eff.size, by="variable") %>% 
+  filter(p.adj < 0.05)
+
+## Number of variables with p.adj-value <0.05
+length(combine.kw$variable)
+
+## table summarizing effect size of the significant variables 
+table(combine.kw$magnitude)
+
+### Post-hoc analysis dunn's test, pairwise multiple comparisons to check which are significant in pairwise analysis.
+dun.test.pos <- df_stat_melt %>% 
+  group_by(variable) %>% 
+  dunn_test(value ~ cluster_number, p.adjust.method = "BH", detailed = TRUE)
+dun.test.pos <- dun.test.pos %>% 
+  filter(p.adj<0.05) # %>% 
+  #rename(cluster_number_1 = group1) %>% 
+  #rename(cluster_number_2 = group2)
+dun.test.pos
+
+imm3_vs_rest_trucd2d0_result <- dun.test.pos
+
+ 
+unique(dun.test.pos$variable)
+
+imm3_vs_rest_trucd2d0_var <- unique(dun.test.pos$variable)
+```
+## cluster 6 d2d0 vs rest
+```{r}
+## select the dataset
+df_stat <- truc_d12d0 %>% 
+  left_join(immunotype, by="subject_identifier") %>%
+  dplyr::select(-dplyr::contains(c("plasmablast_IgD"))) %>%
+  dplyr::select(-dplyr::contains(c("CD56neg"))) %>% 
+  drop_na(cluster_number)%>%
+  mutate(cluster_number = dplyr::recode(cluster_number, 
+                                 "1" = " rest",
+                                 "2" = " rest",
+                                 "3" = " rest",
+                                 "4" = " rest",
+                                 "5" = " rest",
+                                 # "6" = " rest",
+                                 "7" = " rest",
+                                 "8" = " rest",
+                                 "9" = " rest"))%>%
+  droplevels()
+
+## subject identifier and cluster number as.character
+df_stat %<>% mutate_at(
+  c("subject_identifier","cluster_number"),
+  list(~as.character(.)))
+
+## melt
+df_stat_melt <- df_stat %>% 
+  reshape2::melt(.)
+
+### kruskal.test and Dunn's test
+## With kruskal.test we identify overall which subsets are significant and then Dunn's test tells us which are different between pairs of clusters
+kw.test.all <- df_stat_melt %>% 
+  group_by(variable) %>% 
+  kruskal_test(value ~ cluster_number) %>% 
+  adjust_pvalue(method = "BH") 
+kw.test.all.eff.size <- df_stat_melt %>% 
+  group_by(variable) %>% 
+  kruskal_effsize(value ~ cluster_number) 
+combine.kw <- kw.test.all %>% 
+  left_join(kw.test.all.eff.size, by="variable") %>% 
+  filter(p.adj < 0.05)
+
+## Number of variables with p.adj-value <0.05
+length(combine.kw$variable)
+
+## table summarizing effect size of the significant variables 
+table(combine.kw$magnitude)
+
+### Post-hoc analysis dunn's test, pairwise multiple comparisons to check which are significant in pairwise analysis.
+dun.test.pos <- df_stat_melt %>% 
+  group_by(variable) %>% 
+  dunn_test(value ~ cluster_number, p.adjust.method = "BH", detailed = TRUE)
+dun.test.pos <- dun.test.pos %>% 
+  filter(p.adj<0.05) # %>% 
+  #rename(cluster_number_1 = group1) %>% 
+  #rename(cluster_number_2 = group2)
+dun.test.pos
+imm6_vs_rest_trucd2d0_result <- dun.test.pos
+
+unique(dun.test.pos$variable)
+
+imm6_vs_rest_trucd2d0_var <- unique(dun.test.pos$variable)
+
+```
+## d2d0 heatmap
+### data organization
+```{r}
+temp1<- influ_imm2_rest_d2d0_log2_fc_mean_top %>% 
+  add_column(.before = "V1", immunotype="2")
+temp2<-influ_imm3_rest_d2d0_log2_fc_mean_top %>% 
+  add_column(.before = "V1", immunotype="3")
+temp3<-influ_imm6_rest_d2d0_log2_fc_mean_top %>% 
+  add_column(.before = "V1", immunotype="6")
+
+df_hm_long <- rbind(temp1,temp2,temp3) 
+
+temp1 <- influ_imm2_rest_d2d0_log2_fc_mean %>% 
+  dplyr::select(intersect(df_hm_long$subsets,as.character(imm2_vs_rest_trucd2d0_var)))%>% 
+  add_column(.before = "monocytes_nonclassical_D12D0_per", immunotype="2")%>%  
+  pivot_longer(!immunotype, names_to ="subsets", values_to = "V1")
+
+temp2 <- influ_imm3_rest_d2d0_log2_fc_mean %>% 
+  dplyr::select(intersect(df_hm_long$subsets,as.character(imm3_vs_rest_trucd2d0_var)))%>% 
+  add_column(.before = "monocytes_nonclassical_D12D0_per", immunotype="3")%>%  
+  pivot_longer(!immunotype, names_to ="subsets", values_to = "V1")
+
+temp3 <- influ_imm6_rest_d2d0_log2_fc_mean %>% 
+  dplyr::select(intersect(df_hm_long$subsets,as.character(imm6_vs_rest_trucd2d0_var)))%>% 
+  add_column(.before = "CD4_CXCR5+CD38-HLADR-_D12D0_per", immunotype="6")%>%  
+  pivot_longer(!immunotype, names_to ="subsets", values_to = "V1")
+
+df_hm_long <- rbind(temp1,temp2,temp3) 
+#df_hm_long$V1 <- 2^df_hm_long$V1
+df_hm_long$immunotype <- as.factor(df_hm_long$immunotype)
+
+```
+
+### generate and save heatmap
+```{r}
+hm2<-ggplot(df_hm_long, aes(immunotype, subsets, fill= V1)) + 
+  geom_tile() +
+  theme_classic()+
+  scale_fill_gradient2(
+    low = "red", 
+    mid = "azure1",
+    high = "blue", 
+    midpoint = 0)+
+  theme(legend.position = "bottom")
+hm2
+dev.print(pdf, file = paste0(heatmap.dir, "hm_imm2_3_6_d2d0_fc.pdf", sep=""), width = 4.5, height = 10)
+
+```
+
+## cluster 2 d7d0 vs rest
+```{r}
+## select the dataset
+df_stat <- truc_d7d0 %>% 
+  left_join(immunotype, by="subject_identifier") %>%
+  dplyr::select(-dplyr::contains(c("plasmablast_IgD"))) %>%
+  dplyr::select(-dplyr::contains(c("CD56neg"))) %>% 
+  drop_na(cluster_number)%>%
+  mutate(cluster_number = dplyr::recode(cluster_number, 
+                                 "1" = " rest",
+                                 # "2" = " rest",
+                                 "3" = " rest",
+                                 "4" = " rest",
+                                 "5" = " rest",
+                                 "6" = " rest",
+                                 "7" = " rest",
+                                 "8" = " rest",
+                                 "9" = " rest"))%>%
+  droplevels()
+
+## subject identifier and cluster number as.character
+df_stat %<>% mutate_at(
+  c("subject_identifier","cluster_number"),
+  list(~as.character(.)))
+
+## melt
+df_stat_melt <- df_stat %>% 
+  reshape2::melt(.)
+
+### kruskal.test and Dunn's test
+## With kruskal.test we identify overall which subsets are significant and then Dunn's test tells us which are different between pairs of clusters
+kw.test.all <- df_stat_melt %>% 
+  group_by(variable) %>% 
+  kruskal_test(value ~ cluster_number) %>% 
+  adjust_pvalue(method = "BH") 
+kw.test.all.eff.size <- df_stat_melt %>% 
+  group_by(variable) %>% 
+  kruskal_effsize(value ~ cluster_number) 
+combine.kw <- kw.test.all %>% 
+  left_join(kw.test.all.eff.size, by="variable") %>% 
+  filter(p.adj < 0.05)
+
+## Number of variables with p.adj-value <0.05
+length(combine.kw$variable)
+
+## table summarizing effect size of the significant variables 
+table(combine.kw$magnitude)
+
+### Post-hoc analysis dunn's test, pairwise multiple comparisons to check which are significant in pairwise analysis.
+dun.test.pos <- df_stat_melt %>% 
+  group_by(variable) %>% 
+  dunn_test(value ~ cluster_number, p.adjust.method = "BH", detailed = TRUE)
+dun.test.pos <- dun.test.pos %>% 
+  filter(p.adj<0.05) # %>% 
+  #rename(cluster_number_1 = group1) %>% 
+  #rename(cluster_number_2 = group2)
+dun.test.pos
+
+imm2_vs_rest_trucd7d0_result <- dun.test.pos
+
+unique(dun.test.pos$variable)
+
+imm2_vs_rest_trucd7d0_var <- unique(dun.test.pos$variable)
+```
+## cluster 3 d7d0 vs rest
+```{r}
+## select the dataset
+df_stat <- truc_d7d0 %>% 
+  left_join(immunotype, by="subject_identifier") %>%
+  dplyr::select(-dplyr::contains(c("plasmablast_IgD"))) %>%
+  dplyr::select(-dplyr::contains(c("CD56neg"))) %>% 
+  drop_na(cluster_number)%>%
+  mutate(cluster_number = dplyr::recode(cluster_number, 
+                                 "1" = " rest",
+                                 "2" = " rest",
+                                 # "3" = " rest",
+                                 "4" = " rest",
+                                 "5" = " rest",
+                                 "6" = " rest",
+                                 "7" = " rest",
+                                 "8" = " rest",
+                                 "9" = " rest"))%>%
+  droplevels()
+
+## subject identifier and cluster number as.character
+df_stat %<>% mutate_at(
+  c("subject_identifier","cluster_number"),
+  list(~as.character(.)))
+
+## melt
+df_stat_melt <- df_stat %>% 
+  reshape2::melt(.)
+
+### kruskal.test and Dunn's test
+## With kruskal.test we identify overall which subsets are significant and then Dunn's test tells us which are different between pairs of clusters
+kw.test.all <- df_stat_melt %>% 
+  group_by(variable) %>% 
+  kruskal_test(value ~ cluster_number) %>% 
+  adjust_pvalue(method = "BH") 
+kw.test.all.eff.size <- df_stat_melt %>% 
+  group_by(variable) %>% 
+  kruskal_effsize(value ~ cluster_number) 
+combine.kw <- kw.test.all %>% 
+  left_join(kw.test.all.eff.size, by="variable") %>% 
+  filter(p.adj < 0.05)
+
+## Number of variables with p.adj-value <0.05
+length(combine.kw$variable)
+
+## table summarizing effect size of the significant variables 
+table(combine.kw$magnitude)
+
+### Post-hoc analysis dunn's test, pairwise multiple comparisons to check which are significant in pairwise analysis.
+dun.test.pos <- df_stat_melt %>% 
+  group_by(variable) %>% 
+  dunn_test(value ~ cluster_number, p.adjust.method = "BH", detailed = TRUE)
+dun.test.pos <- dun.test.pos %>% 
+  filter(p.adj<0.05) # %>% 
+  #rename(cluster_number_1 = group1) %>% 
+  #rename(cluster_number_2 = group2)
+dun.test.pos
+imm3_vs_rest_trucd7d0_result <- dun.test.pos
+
+unique(dun.test.pos$variable)
+
+imm3_vs_rest_trucd7d0_var <- unique(dun.test.pos$variable)
+```
+## cluster 6 d7d0 vs rest
+```{r}
+## select the dataset
+df_stat <- truc_d7d0 %>% 
+  left_join(immunotype, by="subject_identifier") %>%
+  dplyr::select(-dplyr::contains(c("plasmablast_IgD"))) %>%
+  dplyr::select(-dplyr::contains(c("CD56neg"))) %>% 
+  drop_na(cluster_number)%>%
+  mutate(cluster_number = dplyr::recode(cluster_number, 
+                                 "1" = " rest",
+                                 "2" = " rest",
+                                 "3" = " rest",
+                                 "4" = " rest",
+                                 "5" = " rest",
+                                 # "6" = " rest",
+                                 "7" = " rest",
+                                 "8" = " rest",
+                                 "9" = " rest"))%>%
+  droplevels()
+
+## subject identifier and cluster number as.character
+df_stat %<>% mutate_at(
+  c("subject_identifier","cluster_number"),
+  list(~as.character(.)))
+
+## melt
+df_stat_melt <- df_stat %>% 
+  reshape2::melt(.)
+
+### kruskal.test and Dunn's test
+## With kruskal.test we identify overall which subsets are significant and then Dunn's test tells us which are different between pairs of clusters
+kw.test.all <- df_stat_melt %>% 
+  group_by(variable) %>% 
+  kruskal_test(value ~ cluster_number) %>% 
+  adjust_pvalue(method = "BH") 
+kw.test.all.eff.size <- df_stat_melt %>% 
+  group_by(variable) %>% 
+  kruskal_effsize(value ~ cluster_number) 
+combine.kw <- kw.test.all %>% 
+  left_join(kw.test.all.eff.size, by="variable") %>% 
+  filter(p.adj < 0.05)
+
+## Number of variables with p.adj-value <0.05
+length(combine.kw$variable)
+
+## table summarizing effect size of the significant variables 
+table(combine.kw$magnitude)
+
+### Post-hoc analysis dunn's test, pairwise multiple comparisons to check which are significant in pairwise analysis.
+dun.test.pos <- df_stat_melt %>% 
+  group_by(variable) %>% 
+  dunn_test(value ~ cluster_number, p.adjust.method = "BH", detailed = TRUE)
+dun.test.pos <- dun.test.pos %>% 
+  filter(p.adj<0.05) # %>% 
+  #rename(cluster_number_1 = group1) %>% 
+  #rename(cluster_number_2 = group2)
+dun.test.pos
+imm6_vs_rest_trucd7d0_result <- dun.test.pos
+
+unique(dun.test.pos$variable)
+
+imm6_vs_rest_trucd7d0_var <- unique(dun.test.pos$variable)
+
+```
+
+## d7d0 heatmap
+### data organization
+```{r}
+temp1<- influ_imm2_rest_d7d0_log2_fc_mean_top %>% 
+  add_column(.before = "V1", immunotype="2")
+temp2<-influ_imm3_rest_d7d0_log2_fc_mean_top %>% 
+  add_column(.before = "V1", immunotype="3")
+temp3<-influ_imm6_rest_d7d0_log2_fc_mean_top %>% 
+  add_column(.before = "V1", immunotype="6")
+
+df_hm_long <- rbind(temp1,temp2,temp3) 
+
+temp1 <- influ_imm2_rest_d7d0_log2_fc_mean %>% 
+  dplyr::select(intersect(df_hm_long$subsets,as.character(imm2_vs_rest_trucd7d0_var)))%>% 
+  add_column(.before = "CD4_Treg_Teff_D7D0_per", immunotype="2")%>%  
+  pivot_longer(!immunotype, names_to ="subsets", values_to = "V1")
+
+temp2 <- influ_imm3_rest_d7d0_log2_fc_mean %>% 
+  dplyr::select(intersect(df_hm_long$subsets,as.character(imm3_vs_rest_trucd7d0_var)))%>% 
+  add_column(.before = "monocytes_nonclassical_D7D0_per", immunotype="3")%>%  
+  pivot_longer(!immunotype, names_to ="subsets", values_to = "V1")
+
+temp3 <- influ_imm6_rest_d7d0_log2_fc_mean %>% 
+  dplyr::select(intersect(df_hm_long$subsets,as.character(imm6_vs_rest_trucd7d0_var)))%>% 
+  add_column(.before = "CD4_Tscm_D7D0_per", immunotype="6")%>%  
+  pivot_longer(!immunotype, names_to ="subsets", values_to = "V1")
+
+df_hm_long <- rbind(temp1,temp2,temp3) 
+# df_hm_long$V1 <- 2^df_hm_long$V1
+df_hm_long$immunotype <- as.factor(df_hm_long$immunotype)
+```
+
+
+
+### generate and save heatmap
+```{r}
+hm3<-ggplot(df_hm_long, aes(immunotype, subsets, fill= V1)) + 
+  geom_tile() +
+  theme_classic()+
+  scale_fill_gradient2(
+    low = "red", 
+    mid = "azure1",
+    high = "blue", 
+    midpoint = 0)+
+  theme(legend.position = "bottom")
+hm3
+dev.print(pdf, file = paste0(heatmap.dir, "hm_imm2_3_6_d7d0_fc.pdf", sep=""), width = 4.5, height = 10)
+
+```
+
+## d0-d2d0-d7d0 result Supplementary table 5 merge
+```{r}
+# day0
+x1<-rbind(
+  imm2_vs_rest_trucd0_result,
+  imm3_vs_rest_trucd0_result,
+  imm6_vs_rest_trucd0_result) %>%
+  mutate(timepoint = "day 0", .before=group1) %>%
+  mutate(group2 = ifelse(group2 == 2, "immunotype 2", group2)) %>%
+  mutate(group2 = ifelse(group2 == 3, "immunotype 3", group2)) %>%
+  mutate(group2 = ifelse(group2 == 6, "immunotype 6", group2))
+
+
+# day 1-2/day 0
+x2<-rbind(
+  imm2_vs_rest_trucd2d0_result,
+  imm3_vs_rest_trucd2d0_result,
+  imm6_vs_rest_trucd2d0_result) %>%
+  mutate(timepoint = "day 2/day 0", .before=group1) %>%
+  mutate(group2 = ifelse(group2 == 2, "immunotype 2", group2)) %>%
+  mutate(group2 = ifelse(group2 == 3, "immunotype 3", group2)) %>%
+  mutate(group2 = ifelse(group2 == 6, "immunotype 6", group2))
+
+# day 7/day 0
+x3<-rbind(
+  imm2_vs_rest_trucd7d0_result,
+  imm3_vs_rest_trucd7d0_result,
+  imm6_vs_rest_trucd7d0_result) %>%
+  mutate(timepoint = "day 7/day 0", .before=group1) %>%
+  mutate(group2 = ifelse(group2 == 2, "immunotype 2", group2)) %>%
+  mutate(group2 = ifelse(group2 == 3, "immunotype 3", group2)) %>%
+  mutate(group2 = ifelse(group2 == 6, "immunotype 6", group2))
+
+
+rbind(x1,x2,x3) %>% writexl::write_xlsx( paste0(analysis.path, "/results/tables/imm2_3_6_truc_diffd0d2d7_all.xlsx", sep=""))
+
+```
+# GAMLSS Models - Day 28 HI titers ~ immune subsets (Figure 6a)(Supp.Table 4)
+## HI day 28 ~ immune subsets day 0 
+```{r}
+df_mod <- df_model_6 %>%
+    select_if(~ !any(is.na(.)))
+df_mod
+
+## save the names of the immune variables for the model
+var_model <- colnames(df_mod)[c(23:ncol(df_mod))] 
+
+## start with an empty dataframe
+model_p_value_trucd0_HId28 <- data.frame(matrix(ncol = 0, nrow =7))
+model_coef_trucd0_HId28 <- data.frame(matrix(ncol = 0, nrow =7))
+
+for (i in var_model) {
+  Variable_md <- df_mod[[i]] 
+  
+  mod_set <- gamlss(GMT_T4 ~
+                      Variable_md+
+                      sex+
+                      CMV+
+                      T0_l3
+                    ,data=df_mod, 
+                    family=NBI()
+  )
+  ##p value
+  mod_fit<-summary(mod_set, save=TRUE)
+  list_data <- Map(as.data.frame, mod_fit$pvalue)
+  datarbind <- rbindlist(list_data, use.names = FALSE)
+  colnames(datarbind) <- i
+  model_p_value_trucd0_HId28 <- cbind(model_p_value_trucd0_HId28,datarbind)
+  
+  ##coef
+  list_data <- Map(as.data.frame, mod_fit$coef)
+  datarbind <- rbindlist(list_data, use.names = FALSE)
+  colnames(datarbind) <- i
+  model_coef_trucd0_HId28 <- cbind(model_coef_trucd0_HId28,datarbind)
+}
+
+## pvalue arrangement
+rownames(model_p_value_trucd0_HId28) <- c("p_Intercept_mu","p_immune_subset","p_sex2","p_CMV2","p_T0_l32","p_T0_l33","p_Intercept_sigma")
+model_p_value_trucd0_HId28_fdr <- model_p_value_trucd0_HId28 %>%
+  t() %>% 
+  as.data.frame() %>%  
+  adjust_pvalue(method = "BH", p.col = "p_Intercept_mu") %>%
+  adjust_pvalue(method = "BH", p.col = "p_immune_subset") %>%
+  adjust_pvalue(method = "BH", p.col = "p_sex2") %>%
+  adjust_pvalue(method = "BH", p.col = "p_CMV2") %>%
+  adjust_pvalue(method = "BH", p.col = "p_T0_l32") %>%
+  adjust_pvalue(method = "BH", p.col = "p_T0_l33") %>%
+  adjust_pvalue(method = "BH", p.col = "p_Intercept_sigma") %>%
+  rownames_to_column(var="variable")
+
+##coef arrangement
+rownames(model_coef_trucd0_HId28) <- c("c_Intercept_mu","c_immune_subset","c_sex2","c_CMV2","c_T0_l32","c_T0_l33","c_Intercept_sigma")
+model_coef_trucd0_HId28_t <- model_coef_trucd0_HId28 %>% 
+  t() %>% 
+  as.data.frame() %>%
+  rownames_to_column(var="variable")
+
+## merge p value and coef
+model_trucd0_HId28 <- cbind(model_coef_trucd0_HId28_t,model_p_value_trucd0_HId28_fdr[-1])
+
+```
+## HI day 28 ~ immune subsets day 1-2/day 0
+```{r}
+df_mod <- df_model_9 %>%
+    select_if(~ !any(is.na(.)))
+df_mod
+
+## save the names of the immune variables for the model
+var_model <- colnames(df_mod)[c(23:ncol(df_mod))] 
+
+## start with an empty dataframe
+model_p_value_trucd2d0_HId28 <- data.frame(matrix(ncol = 0, nrow =7))
+model_coef_trucd2d0_HId28 <- data.frame(matrix(ncol = 0, nrow =7))
+
+
+for (i in var_model) {
+  Variable_md <- df_mod[[i]] 
+  
+  mod_set <- gamlss(GMT_T4 ~
+                      Variable_md+
+                      sex+
+                      CMV+
+                      T0_l3
+                    ,data=df_mod, 
+                    family=NBI()
+  )
+  ##p value
+  mod_fit<-summary(mod_set, save=TRUE)
+  list_data <- Map(as.data.frame, mod_fit$pvalue)
+  datarbind <- rbindlist(list_data, use.names = FALSE)
+  colnames(datarbind) <- i
+  model_p_value_trucd2d0_HId28 <- cbind(model_p_value_trucd2d0_HId28,datarbind)
+  
+  ##coef
+  list_data <- Map(as.data.frame, mod_fit$coef)
+  datarbind <- rbindlist(list_data, use.names = FALSE)
+  colnames(datarbind) <- i
+  model_coef_trucd2d0_HId28 <- cbind(model_coef_trucd2d0_HId28,datarbind)
+}
+
+## pvalue arrangement
+rownames(model_p_value_trucd2d0_HId28) <- c("p_Intercept_mu","p_immune_subset","p_sex2","p_CMV2","p_T0_l32","p_T0_l33","p_Intercept_sigma")
+model_p_value_trucd2d0_HId28_fdr <- model_p_value_trucd2d0_HId28 %>%
+  t() %>% 
+  as.data.frame() %>%  
+  adjust_pvalue(method = "BH", p.col = "p_Intercept_mu") %>%
+  adjust_pvalue(method = "BH", p.col = "p_immune_subset") %>%
+  adjust_pvalue(method = "BH", p.col = "p_sex2") %>%
+  adjust_pvalue(method = "BH", p.col = "p_CMV2") %>%
+  adjust_pvalue(method = "BH", p.col = "p_T0_l32") %>%
+  adjust_pvalue(method = "BH", p.col = "p_T0_l33") %>%
+  adjust_pvalue(method = "BH", p.col = "p_Intercept_sigma") %>%
+  rownames_to_column(var="variable")
+
+##coef arrangement
+rownames(model_coef_trucd2d0_HId28) <- c("c_Intercept_mu","c_immune_subset","c_sex2","c_CMV2","c_T0_l32","c_T0_l33","c_Intercept_sigma")
+model_coef_trucd2d0_HId28_t <- model_coef_trucd2d0_HId28 %>% 
+  t() %>% 
+  as.data.frame() %>%
+  rownames_to_column(var="variable")
+## merge p value and coef
+model_trucd2d0_HId28 <- cbind(model_coef_trucd2d0_HId28_t,model_p_value_trucd2d0_HId28_fdr[-1])
+
+```
+## HI day 28 ~ immune subsets day 7/day 0
+```{r}
+df_mod <- df_model_5 %>%
+    select_if(~ !any(is.na(.)))
+df_mod
+
+## save the names of the immune variables for the model
+var_model <- colnames(df_mod)[c(23:ncol(df_mod))] 
+
+## start with an empty dataframe
+model_p_value_trucd7d0_HId28 <- data.frame(matrix(ncol = 0, nrow =7))
+model_coef_trucd7d0_HId28 <- data.frame(matrix(ncol = 0, nrow =7))
+
+
+for (i in var_model) {
+  Variable_md <- df_mod[[i]] 
+  
+  mod_set <- gamlss(GMT_T4 ~
+                      Variable_md+
+                      sex+
+                      CMV+
+                      T0_l3
+                    ,data=df_mod, 
+                    family=NBI()
+  )
+  ##p value
+  mod_fit<-summary(mod_set, save=TRUE)
+  list_data <- Map(as.data.frame, mod_fit$pvalue)
+  datarbind <- rbindlist(list_data, use.names = FALSE)
+  colnames(datarbind) <- i
+  model_p_value_trucd7d0_HId28 <- cbind(model_p_value_trucd7d0_HId28,datarbind)
+  
+  ##coef
+  list_data <- Map(as.data.frame, mod_fit$coef)
+  datarbind <- rbindlist(list_data, use.names = FALSE)
+  colnames(datarbind) <- i
+  model_coef_trucd7d0_HId28 <- cbind(model_coef_trucd7d0_HId28,datarbind)
+}
+
+## pvalue arrangement
+rownames(model_p_value_trucd7d0_HId28) <- c("p_Intercept_mu","p_immune_subset","p_sex2","p_CMV2","p_T0_l32","p_T0_l33","p_Intercept_sigma")
+model_p_value_trucd7d0_HId28_fdr <- model_p_value_trucd7d0_HId28 %>%
+  t() %>% 
+  as.data.frame() %>%  
+  adjust_pvalue(method = "BH", p.col = "p_Intercept_mu") %>%
+  adjust_pvalue(method = "BH", p.col = "p_immune_subset") %>%
+  adjust_pvalue(method = "BH", p.col = "p_sex2") %>%
+  adjust_pvalue(method = "BH", p.col = "p_CMV2") %>%
+  adjust_pvalue(method = "BH", p.col = "p_T0_l32") %>%
+  adjust_pvalue(method = "BH", p.col = "p_T0_l33") %>%
+  adjust_pvalue(method = "BH", p.col = "p_Intercept_sigma") %>%
+  rownames_to_column(var="variable")
+
+##coef arrangement
+rownames(model_coef_trucd7d0_HId28) <- c("c_Intercept_mu","c_immune_subset","c_sex2","c_CMV2","c_T0_l32","c_T0_l33","c_Intercept_sigma")
+model_coef_trucd7d0_HId28_t <- model_coef_trucd7d0_HId28 %>% 
+  t() %>% 
+  as.data.frame() %>%
+  rownames_to_column(var="variable")
+
+## merge p value and coef
+model_trucd7d0_HId28 <- cbind(model_coef_trucd7d0_HId28_t,model_p_value_trucd7d0_HId28_fdr[-1])
+
+
+```
+
+## combine model data, p-values and coefficients (Supp.Table 4)
+```{r}
+## day 0 immune variable results
+n1 <- model_trucd0_HId28 %>% 
+  add_column(condition="trucd0_HId28",.before = "c_immune_subset")%>%
+  add_column(group="all",.before = "c_immune_subset")%>%
+  dplyr::select( -dplyr::contains(c("Intercept")))
+
+## day 1-2 immune variable results
+n2 <- model_trucd2d0_HId28 %>% 
+  add_column(condition="trucd2d0_HId28",.before = "c_immune_subset") %>%
+  add_column(group="all",.before = "c_immune_subset")%>%
+  dplyr::select( -dplyr::contains(c("Intercept")))
+
+## day 7 immune variable results
+n3 <- model_trucd7d0_HId28 %>% 
+  add_column(condition="trucd7d0_HId28",.before = "c_immune_subset")%>%
+  add_column(group="all",.before = "c_immune_subset")%>%
+  dplyr::select( -dplyr::contains(c("Intercept")))
+
+## merge the results
+model_trucd0_d2d0_d7d0_HId28_combined <- rbind(n1,n2,n3) %>% 
+  dplyr::select(-group) %>%
+  filter(p_immune_subset.adj<=0.05)
+
+## save as xlsx
+writexl::write_xlsx(model_trucd0_d2d0_d7d0_HId28_combined, paste0(analysis.path, "/results/tables/model_trucd0_d2d0_d7d0_HId28_combined.xlsx", sep=""))
+```
+
+```{r}
+
+model_trucd0_d2d0_d7d0_HId28_combined %>% 
+  filter(!grepl("_num", variable)) %>%
+  arrange(desc(-c_immune_subset))
+
+```
+
+## calculate the models for significant immune parameters one by one HI day 28 ~ immune subsets day 1-2/day 0 & day 7/day 0
+```{r}
+df_mod2 <- df_model_9 %>%
+    select_if(~ !any(is.na(.)))
+
+df_mod7 <- df_model_5 %>%
+    select_if(~ !any(is.na(.)))
+
+mod_set_td2d07d0_Hd28_1 <- gamlss(GMT_T4 ~
+                      `CD4_CXCR5+CD38-HLADR-_D7D0_per`+
+                      sex+
+                      CMV+
+                      T0_l3
+                    ,data=df_mod7, 
+                    family=NBI())
+
+mod_set_td2d07d0_Hd28_2 <- gamlss(GMT_T4 ~
+                      `CD19_CD95-HLADR-_D7D0_per`+
+                      sex+
+                      CMV+
+                      T0_l3
+                    ,data=df_mod7, 
+                    family=NBI())
+
+mod_set_td2d07d0_Hd28_3 <- gamlss(GMT_T4 ~
+                      `CD8+_CD95-HLADR+_D12D0_per`+
+                      sex+
+                      CMV+
+                      T0_l3
+                    ,data=df_mod2, 
+                    family=NBI())
+
+mod_set_td2d07d0_Hd28_4 <- gamlss(GMT_T4 ~
+                      `plasmablast_CD27+CD38+_D7D0_per`+
+                      sex+
+                      CMV+
+                      T0_l3
+                    ,data=df_mod7, 
+                    family=NBI())
+
+mod_set_td2d07d0_Hd28_5 <- gamlss(GMT_T4 ~
+                      `CD8+_CD95-HLADR+_D7D0_per`+
+                      sex+
+                      CMV+
+                      T0_l3
+                    ,data=df_mod7, 
+                    family=NBI())
+
+mod_set_td2d07d0_Hd28_6 <- gamlss(GMT_T4 ~
+                      `CD4_HLADR+_D7D0_per`+
+                      sex+
+                      CMV+
+                      T0_l3
+                    ,data=df_mod7, 
+                    family=NBI())
+
+mod_set_td2d07d0_Hd28_7 <- gamlss(GMT_T4 ~
+                      `CD4+_CD95+HLADR+_D7D0_per`+
+                      sex+
+                      CMV+
+                      T0_l3
+                    ,data=df_mod7, 
+                    family=NBI())
+
+mod_set_td2d07d0_Hd28_8 <- gamlss(GMT_T4 ~
+                      `CD4_Tcm_CD95+HLADR+_D7D0_per`+
+                      sex+
+                      CMV+
+                      T0_l3
+                    ,data=df_mod7, 
+                    family=NBI())
+
+mod_set_td2d07d0_Hd28_9 <- gamlss(GMT_T4 ~
+                      `CD4_CD38+HLADR+_D7D0_per`+
+                      sex+
+                      CMV+
+                      T0_l3
+                    ,data=df_mod7, 
+                    family=NBI())
+
+mod_set_td2d07d0_Hd28_10 <- gamlss(GMT_T4 ~
+                      `CD4_CXCR5+CD38+HLADR-_D7D0_per`+
+                      sex+
+                      CMV+
+                      T0_l3
+                    ,data=df_mod7, 
+                    family=NBI())
+
+mod_set_td2d07d0_Hd28_11 <- gamlss(GMT_T4 ~
+                      `CD4_CXCR5+CD38+_D7D0_per`+
+                      sex+
+                      CMV+
+                      T0_l3
+                    ,data=df_mod7, 
+                    family=NBI())
+
+mod_set_td2d07d0_Hd28_12 <- gamlss(GMT_T4 ~
+                      `CD56dim_CD38+HLADR-_D7D0_per`+
+                      sex+
+                      CMV+
+                      T0_l3
+                    ,data=df_mod7, 
+                    family=NBI())
+
+mod_set_td2d07d0_Hd28_13 <- gamlss(GMT_T4 ~
+                      `CD56dim_CD38+_D7D0_per`+
+                      sex+
+                      CMV+
+                      T0_l3
+                    ,data=df_mod7, 
+                    family=NBI())
+
+mod_set_td2d07d0_Hd28_14 <- gamlss(GMT_T4 ~
+                      `B_memory_CD27+CD38-_D7D0_per`+
+                      sex+
+                      CMV+
+                      T0_l3
+                    ,data=df_mod7, 
+                    family=NBI())
+
+mod_set_td2d07d0_Hd28_15 <- gamlss(GMT_T4 ~
+                      `B_switched_memory_IgD-CD27+_D7D0_per`+
+                      sex+
+                      CMV+
+                      T0_l3
+                    ,data=df_mod7, 
+                    family=NBI())
+
+mod_set_td2d07d0_Hd28_16 <- gamlss(GMT_T4 ~
+                      `CD19_HLADR+_D7D0_per`+
+                      sex+
+                      CMV+
+                      T0_l3
+                    ,data=df_mod7, 
+                    family=NBI())
+```
+
+### plot calculated models HI day 28 ~ immune subsets day 1-2/day 0 & immune subsets day 7/day 0 (percentages) (Figure 6A)
+```{r}
+pdf(file = paste0(models.dir, "gaml_trucs_HId28_adjp_per.pdf", sep=""), width =5 , height =5)
+dwplot(list(mod_set_td2d07d0_Hd28_1,
+            mod_set_td2d07d0_Hd28_2,
+            mod_set_td2d07d0_Hd28_3,
+            mod_set_td2d07d0_Hd28_4,
+            mod_set_td2d07d0_Hd28_5,
+            mod_set_td2d07d0_Hd28_6,
+            mod_set_td2d07d0_Hd28_7,
+            mod_set_td2d07d0_Hd28_8,
+            mod_set_td2d07d0_Hd28_9,
+            mod_set_td2d07d0_Hd28_10,
+            mod_set_td2d07d0_Hd28_11,
+            mod_set_td2d07d0_Hd28_12,
+            mod_set_td2d07d0_Hd28_13,
+            mod_set_td2d07d0_Hd28_14,
+            mod_set_td2d07d0_Hd28_15,
+            mod_set_td2d07d0_Hd28_16
+            ), 
+       show_intercept = FALSE,
+       dot_args = list(aes()))+
+    geom_vline(xintercept = 0,
+               colour = "grey60",
+               linetype = 2,
+               size=0.2)+
+  theme_classic()+
+  xlab("Coefficient Estimate") + 
+  ylab("")+
+  theme(legend.position='none')
+dev.off()
+```
+
+# Heatmap clusters d2d0, d7d0 (Figure 6b)
+```{r}
+## select immune variables used for clustering and cluster number, summarize the medians for those parameters
+# GAMLLS predictors
+dat_hm <- immunotype %>% 
+  left_join(truc_d12d0_log2, by="subject_identifier") %>%
+  left_join(truc_d7d0_log2, by="subject_identifier") %>%
+  drop_na(cluster_number,granulocytes_D7D0_per,granulocytes_D12D0_per) %>%
+  dplyr::select(subject_identifier,cluster_number, sign_vars_gamlss[[1]]) %>%
+  column_to_rownames(var="subject_identifier") %>%
+  drop_na()
+
+## MEAN
+## select immune variables used for clustering and cluster number, summarize the medians for those parameters
+df_heatmap_cluster <- dat_hm %>% 
+  # drop_na() %>%
+  group_by(cluster_number) %>% 
+  summarise_all(list(median)) 
+
+## now it is a tibble, convert to dataframe before setting the rownames as cluster numbers
+df_heatmap_cluster <- as.data.frame(df_heatmap_cluster)
+rownames(df_heatmap_cluster) <- df_heatmap_cluster$cluster_number
+
+## remove the cluster number and transpose it for the heatmap
+df_heatmap_cluster <- df_heatmap_cluster %>% dplyr::select(-c(cluster_number)) %>% t()
+
+## color palette for the heatmap
+h.col<-colorRampPalette(c("blue", "white", "red"))(31)
+
+library(pheatmap)
+
+
+pdf(file = paste0(heatmap.dir, "hm_cluster_mean_d2d0_d7d0.pdf", sep=""), width =6 , height =7)
+
+pheatmap(as.matrix(df_heatmap_cluster),
+         cluster_rows = TRUE,# to have the dendrogram on the rows
+         cluster_cols = TRUE, # to have the dendrogram on the columns
+         show_rownames = TRUE,
+         show_colnames =  TRUE,
+         clustering_distance_rows = "correlation",
+         clustering_distance_cols = "correlation",
+         color = h.col,
+         scale="row",
+         main = "",
+         border_color = NA)
+
+ dev.off() #save as a pdf
+
+```
+
+# Random forest & ridge models (Supp.Fig 2a-b)
+## random forest
+```{r}
+# GAMLLS predictors
+sign_vars_gamlss <- model_trucd0_d2d0_d7d0_HId28_combined %>%
+filter(p_immune_subset.adj<0.05) %>%
+dplyr::select(variable) %>%
+unique() %>%
+as.data.frame() %>%
+filter(grepl('_per', variable)) #select only immune subset percentages
+
+
+## subset data for RF & Lasso
+df_rf <- HI_df %>% 
+  dplyr::select(subject_identifier, GMT_T4) %>%
+  left_join(truc_d0, by="subject_identifier") %>%
+  left_join(truc_d12d0_log2, by="subject_identifier") %>%
+  left_join(truc_d7d0_log2, by="subject_identifier") %>%
+  drop_na(GMT_T4, granulocytes_D0_per,granulocytes_D7D0_per,granulocytes_D12D0_per) %>%
+  dplyr::select(subject_identifier, GMT_T4, sign_vars_gamlss[[1]]) %>%
+  column_to_rownames(var="subject_identifier") %>%
+  drop_na()
+df_rf$GMT_T4 <- log(df_rf$GMT_T4)
+
+## rename + & - symbols
+names(df_rf) <- gsub(x = names(df_rf), pattern = "\\+", replacement = "p")  
+names(df_rf) <- gsub(x = names(df_rf), pattern = "\\-", replacement = "n")  
+
+library(caret)
+library(caTools)
+set.seed(123) ##set seed
+
+## Random forest settings
+control1 <- trainControl(method='repeatedcv',
+                        number=10,
+                        repeats=10)
+metric <- "Accuracy"
+
+mtry <- sqrt(ncol(train)-1) #minus 1 columns, HI_response 
+tunegrid <- expand.grid(.mtry=mtry)
+
+## Run Random forest
+rf_res1 <- train(GMT_T4 ~ .,
+                    data = df_rf,
+                    method='rf',
+                    tuneGrid=tunegrid,
+                    trControl=control1,
+                    importance=TRUE)
+
+summary(rf_res1)
+
+rf_res1
+
+plot(varImp(rf_res1))
+
+pdf(file = paste0(models.dir, "RF_selvar_n.pdf", sep=""), width =6 , height =6) ; plot(varImp(rf_res1)) ; dev.off() #save as a pdf
+```
+
+## Ridge
+```{r}
+library(caTools)
+library(caret)
+library(glmnet)
+set.seed(123) ##set seed
+
+# Center y, X will be standardized in the modelling function
+y <- df_rf %>% dplyr::select(GMT_T4) %>% scale(center = TRUE, scale = FALSE) %>% as.matrix()
+x <- df_rf %>% dplyr::select(-GMT_T4) %>% as.matrix()
+
+lambdas_to_try <- 10^seq(-3, 5, length.out = 100)
+
+cv <- cv.glmnet(x, y, alpha = 0,lambda = lambdas_to_try,
+                      standardize = TRUE, nfolds = 100)
+# Display the best lambda value
+cv$lambda.min
+
+# Fit the final model
+model <- glmnet(x, y, alpha = 0, lambda = cv$lambda.min, standardize = TRUE)
+
+## Ridge model coef plot
+fc_plot  <- coef(model) %>% 
+  as.matrix() %>%
+  as.data.frame() %>%
+  rownames_to_column(var="variable") %>%
+  filter(variable %!in% "(Intercept)") %>%
+  arrange(desc(s0)) %>% 
+  mutate(name = fct_reorder(variable, -s0)) %>%
+  ggplot( aes(x=name, y=s0)) +
+  geom_segment( aes(xend=name, yend=0)) +
+  geom_point( size=3, color="orange") +
+  theme_classic() +
+  coord_flip() +
+  ylab("Coefficient (Ridge)")
+fc_plot
+
+## save pdf
+pdf(file = paste0(models.dir, "Ridge_selvar.pdf", sep=""), width =5 , height =5) ; fc_plot ; dev.off() #save as a pdf
+
+
+res <- glmnet(x, y, alpha = 0, lambda = lambdas_to_try , standardize = FALSE)
+
+pdf(file = paste0(models.dir, "Ridge_lambda.pdf", sep=""), width =5 , height =5) 
+plot(res, xvar = "lambda")
+legend("bottomright", lwd = 1, legend = "")
+dev.off() #save as a pdf
+```
+
+

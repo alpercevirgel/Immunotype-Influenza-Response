@@ -1,0 +1,688 @@
+---
+title: "Data organization"
+author: "Alper Cevirgel"
+output: pdf_document
+---
+
+# library
+```{r message=FALSE, warning=FALSE, include=FALSE}
+source("codes/libraries_functions.R") #load the libraries
+analysis.path <- getwd()
+```
+
+# HI data organization
+## Import HI data
+```{r}
+## import data, contains collection day, assay type, sample type
+HI_all <- read_excel("/Users/alpercevirgel/Documents/Alper RIVM/1_Complete_analysis_per_project/VITAL database/VITAL database Alper.xlsx",
+                           sheet = "HI_influenza",
+                           skip = 1) %>% 
+  mutate_at(c("subject_identifier"), list(~as.character(.))) %>% 
+  as.data.frame()
+
+```
+
+# import additional datasets, demographics, trucount, CMV, immunotype
+## Subject information, age, age group, sex
+```{r}
+## subset the age, age groups and sex data 
+vital.subject <- read_excel("/Users/alpercevirgel/Documents/Alper RIVM/1_Complete_analysis_per_project/VITAL database/VITAL database Alper.xlsx",
+                            sheet = "subject",
+                            skip = 1) %>% 
+  mutate_at(c("sex","Age_group_T0"), list(~factor(.))) %>%
+  mutate_at(c("subject_identifier"), list(~as.character(.))) %>%
+  dplyr::rename(age_group=Age_group_T0,
+                age=Age_T0,
+                BMI=BMI_T0) %>%
+  dplyr::select(subject_identifier,sex,age,BMI,age_group) %>%
+  as.data.frame()
+head(vital.subject) 
+```
+
+## Chronic viral infection data
+```{r}
+## add chronic herpes virus infection data, and create factors for CMV+/- & EBV+/- combinations
+chronic_viral_inf <- read_excel("/Users/alpercevirgel/Documents/Alper RIVM/1_Complete_analysis_per_project/VITAL database/VITAL database Alper.xlsx", 
+                                       sheet = "CMV_EBV_VZV",
+                                       skip = 1,na = "n/a") %>%
+  dplyr::select(subject_identifier,MIA_CMV_Titer,MIA_CMV_Seropositivity,MIA_EBV_Titer,MIA_EBV_Seropositivity,MIA_VZV_Titer,MIA_VZV_Seropositivity) %>%
+  mutate(CMV_EBV_combined = case_when(
+      MIA_CMV_Seropositivity == "1" & MIA_EBV_Seropositivity == "1"  ~ "CMV+EBV+",
+      MIA_CMV_Seropositivity == "2" & MIA_EBV_Seropositivity == "2"  ~ "CMV-EBV-",
+      MIA_CMV_Seropositivity == "3" | MIA_EBV_Seropositivity == "3"  ~ "Borderline",
+      MIA_CMV_Seropositivity == "1" & MIA_EBV_Seropositivity == "2"  ~ "CMV+EBV-",
+      MIA_CMV_Seropositivity == "2" & MIA_EBV_Seropositivity == "1"  ~ "CMV-EBV+",
+),.after="subject_identifier") %>%
+  mutate_at(c("subject_identifier"), list(~as.character(.))) %>%
+  mutate_at(c("MIA_CMV_Seropositivity","MIA_EBV_Seropositivity","MIA_VZV_Seropositivity","CMV_EBV_combined"), list(~factor(.)))
+
+head(chronic_viral_inf)
+```
+
+
+
+## Trucount data (IQV)
+```{r}
+## import data, contains the influenza vaccination trucount data, age, timepoint 
+## Import raw data, 
+vital.truc_influ <- read_excel("/Users/alpercevirgel/Documents/Alper RIVM/1_Complete_analysis_per_project/VITAL database/VITAL database Alper.xlsx",
+                               sheet = "trucount_influenza_vac",
+                               skip = 1) %>% 
+  mutate_at(c("sex","age_group","timepoint","timepoint_days"), list(~factor(.))) %>%
+  mutate_at(c("subject_identifier"), list(~as.character(.))) %>%
+  as.data.frame()
+
+## some additional variables added later
+influ_truc_additional <- read_excel("/Users/alpercevirgel/Documents/Alper RIVM/1_Complete_analysis_per_project/VITAL database/VITAL database Alper.xlsx",
+                                    sheet = "extented_influ_trucount_subsets",
+                                    skip = 1) %>% 
+  dplyr::select(-c(timepoint, subject_identifier))%>%
+  mutate_at(c("sample_identifier"), list(~as.character(.)))
+
+## merge
+vital.truc_influ_additional <- vital.truc_influ %>%
+  left_join(influ_truc_additional, by="sample_identifier") %>%
+  dplyr::select(-c(fcs_file,age_group,age,sex,timepoint_days,sample_identifier)) 
+
+
+## filter timepoints
+vital.truc_influ_d0_additional <- vital.truc_influ_additional %>% filter(timepoint %in% "A")
+vital.truc_influ_d2_additional <- vital.truc_influ_additional %>% filter(timepoint %in% "B")
+vital.truc_influ_d7_additional <- vital.truc_influ_additional %>% filter(timepoint %in% "C")
+
+## add timepoint info to variables 
+### day 0
+vital.truc_influ_d0_additional <- rename_with(vital.truc_influ_d0_additional, ~(gsub("_per", "_D0_per", .x, fixed = TRUE)))
+vital.truc_influ_d0_additional <- rename_with(vital.truc_influ_d0_additional, ~(gsub("_num", "_D0_num", .x, fixed = TRUE)))
+
+vital.truc_influ_d0_additional <- vital.truc_influ_d0_additional %>%
+  rename(CD4TnTm_D0=CD4TnTm,
+         CD8TnTm_D0=CD8TnTm)
+
+### day 1-2
+vital.truc_influ_d2_additional <- rename_with(vital.truc_influ_d2_additional, ~(gsub("_per", "_D2_per", .x, fixed = TRUE)))
+vital.truc_influ_d2_additional <- rename_with(vital.truc_influ_d2_additional, ~(gsub("_num", "_D2_num", .x, fixed = TRUE)))
+
+vital.truc_influ_d2_additional <- vital.truc_influ_d2_additional %>%
+  rename(CD4TnTm_D2=CD4TnTm,
+         CD8TnTm_D2=CD8TnTm)
+
+### day 7
+vital.truc_influ_d7_additional <- rename_with(vital.truc_influ_d7_additional, ~(gsub("_per", "_D7_per", .x, fixed = TRUE)))
+vital.truc_influ_d7_additional <- rename_with(vital.truc_influ_d7_additional, ~(gsub("_num", "_D7_num", .x, fixed = TRUE)))
+
+vital.truc_influ_d7_additional <- vital.truc_influ_d7_additional %>%
+  rename(CD4TnTm_D7=CD4TnTm,
+         CD8TnTm_D7=CD8TnTm)
+```
+
+# Calculate immune subset kinetics between Day0-Day1/2 and Day0-Day7
+## Kinetics Day0 between Day1-2
+```{r}
+#### Day 1-2 vs Day0 ####
+df_kinetics_D0D12 <- vital.truc_influ_additional %>% filter(timepoint %in% c("A","B") )
+
+## identifying subject IDs with both Day0 and Day1-2 data points
+subject_ID_D0D12 <- df_kinetics_D0D12[duplicated(df_kinetics_D0D12$subject_identifier),]$subject_identifier
+
+## removing the subject IDs that do not contain both D0D12 data , D12 means Day1-Day2
+print("dims before non-D0D12 datapoints removed") ; dim(df_kinetics_D0D12)
+df_kinetics_D0D12 <- df_kinetics_D0D12[(df_kinetics_D0D12$subject_identifier %in% subject_ID_D0D12),]
+print("dims after non-D0D12 datapoints removed") ; dim(df_kinetics_D0D12)
+
+## subset the day 0 and day 1-2 data
+df_kinetics_D0 <- df_kinetics_D0D12 %>% filter(timepoint %in% c("A"))
+df_kinetics_D12 <- df_kinetics_D0D12 %>% filter(timepoint %in% c("B"))
+
+## check if the IDs match
+print("Do the subject IDs match?");all.equal(df_kinetics_D0$subject_identifier,df_kinetics_D12$subject_identifier)
+
+
+## calculate the log2 fold change
+df_kinetics_D12_D0 <- as.data.frame(c()) ## set as a dataframe
+df_kinetics_D12_D0 <- df_kinetics_D0[c(1:2)] ## add participant data
+df_kinetics_D12_D0_log2 <- as.data.frame(c()) ## set as a dataframe
+df_kinetics_D12_D0_log2 <- df_kinetics_D0[c(1:2)] ## add participant data
+NCOL <- ncol(df_kinetics_D0)
+
+df_kinetics_D12_D0[c(3:NCOL)] <- ((df_kinetics_D12[c(3:NCOL)])/(df_kinetics_D0[c(3:NCOL)])) ## calculate the fold changes
+truc_d12d0_raw <- df_kinetics_D12_D0 %>% dplyr::select(-timepoint)
+
+df_kinetics_D12_D0_log2[c(3:NCOL)] <- log2((df_kinetics_D12[c(3:NCOL)])/(df_kinetics_D0[c(3:NCOL)])) ## calculate the fold changes
+df_kinetics_D12_D0_influ_log2fc <- df_kinetics_D12_D0_log2 %>% dplyr::select(-c(timepoint)) ##remove non-necessary columns 
+
+## rename the columns
+df_kinetics_D12_D0_influ_log2fc <- rename_with(df_kinetics_D12_D0_influ_log2fc, ~(gsub("_per", "_D12D0_per", .x, fixed = TRUE)))
+df_kinetics_D12_D0_influ_log2fc <- rename_with(df_kinetics_D12_D0_influ_log2fc, ~(gsub("_num", "_D12D0_num", .x, fixed = TRUE)))
+df_kinetics_D12_D0_influ_log2fc <- df_kinetics_D12_D0_influ_log2fc %>%
+  rename(CD4TnTm_D12D0=CD4TnTm,
+         CD8TnTm_D12D0=CD8TnTm)
+
+truc_d12d0_raw <- rename_with(truc_d12d0_raw, ~(gsub("_per", "_D12D0_per", .x, fixed = TRUE)))
+truc_d12d0_raw <- rename_with(truc_d12d0_raw, ~(gsub("_num", "_D12D0_num", .x, fixed = TRUE)))
+truc_d12d0_raw <- truc_d12d0_raw %>%
+  rename(CD4TnTm_D12D0=CD4TnTm,
+         CD8TnTm_D12D0=CD8TnTm)
+
+## calculate the log2 fold change (adding 0.01 to every cell)
+df_kinetics_D12_D0 <- as.data.frame(c()) ## set as a dataframe
+df_kinetics_D12_D0 <- df_kinetics_D0[c(1:2)] ## add participant data
+df_kinetics_D12_D0_log2 <- as.data.frame(c()) ## set as a dataframe
+df_kinetics_D12_D0_log2 <- df_kinetics_D0[c(1:2)] ## add participant data
+NCOL <- ncol(df_kinetics_D0)
+
+
+df_kinetics_D12_D0[c(3:NCOL)] <- ((df_kinetics_D12[c(3:NCOL)]+0.01)/(df_kinetics_D0[c(3:NCOL)]+0.01)) ## calculate the fold changes
+truc_d12d0_raw_p01 <- df_kinetics_D12_D0 %>% dplyr::select(-timepoint)
+
+df_kinetics_D12_D0_log2[c(3:NCOL)] <- log2((df_kinetics_D12[c(3:NCOL)]+0.01)/(df_kinetics_D0[c(3:NCOL)]+0.01)) ## calculate the fold changes
+df_kinetics_D12_D0_influ_log2fc_p01 <- df_kinetics_D12_D0_log2 %>% dplyr::select(-c(timepoint)) ##remove non-necessary columns 
+
+## rename the columns
+df_kinetics_D12_D0_influ_log2fc_p01 <- rename_with(df_kinetics_D12_D0_influ_log2fc_p01, ~(gsub("_per", "_D12D0_per", .x, fixed = TRUE)))
+df_kinetics_D12_D0_influ_log2fc_p01 <- rename_with(df_kinetics_D12_D0_influ_log2fc_p01, ~(gsub("_num", "_D12D0_num", .x, fixed = TRUE)))
+df_kinetics_D12_D0_influ_log2fc_p01 <- df_kinetics_D12_D0_influ_log2fc_p01 %>%
+  rename(CD4TnTm_D12D0=CD4TnTm,
+         CD8TnTm_D12D0=CD8TnTm)
+
+truc_d12d0_raw_p01 <- rename_with(truc_d12d0_raw_p01, ~(gsub("_per", "_D12D0_per", .x, fixed = TRUE)))
+truc_d12d0_raw_p01 <- rename_with(truc_d12d0_raw_p01, ~(gsub("_num", "_D12D0_num", .x, fixed = TRUE)))
+truc_d12d0_raw_p01 <- truc_d12d0_raw_p01 %>%
+  rename(CD4TnTm_D12D0=CD4TnTm,
+         CD8TnTm_D12D0=CD8TnTm)
+```
+
+## Kinetics Day0 between Day7
+```{r}
+#### Day 7 vs Day0 ####
+df_kinetics_D0D7 <- vital.truc_influ_additional %>% filter(timepoint %in% c("A","C") )
+
+## identifying subject IDs with both Day0 and Day7 data points
+subject_ID_D0D7 <- df_kinetics_D0D7[duplicated(df_kinetics_D0D7$subject_identifier),]$subject_identifier
+
+## removing the subject IDs that do not contain both D0D7 data
+print("dims before non-D0D7 datapoints removed") ; dim(df_kinetics_D0D7)
+df_kinetics_D0D7 <- df_kinetics_D0D7[(df_kinetics_D0D7$subject_identifier %in% subject_ID_D0D7),]
+print("dims after non-D0D7 datapoints removed") ; dim(df_kinetics_D0D7)
+
+## subset the day 0 and day 7 data
+df_kinetics_D0 <- df_kinetics_D0D7 %>% filter(timepoint %in% c("A"))
+df_kinetics_D7 <- df_kinetics_D0D7 %>% filter(timepoint %in% c("C"))
+
+## check if the IDs match
+print("Do the subject IDs match?");all.equal(df_kinetics_D0$subject_identifier,df_kinetics_D7$subject_identifier)
+
+## calculate the log2 fold change
+df_kinetics_D7_D0 <- as.data.frame(c()) ## set as a dataframe
+df_kinetics_D7_D0 <- df_kinetics_D0[c(1,2)] ## add participant data
+df_kinetics_D7_D0_log2 <- as.data.frame(c()) ## set as a dataframe
+df_kinetics_D7_D0_log2 <- df_kinetics_D0[c(1,2)] ## add participant data
+NCOL <- ncol(df_kinetics_D0)
+
+df_kinetics_D7_D0[c(3:NCOL)] <- ((df_kinetics_D7[c(3:NCOL)])/(df_kinetics_D0[c(3:NCOL)])) ## calculate the fold changes
+truc_d7d0_raw <- df_kinetics_D7_D0 %>% dplyr::select(-timepoint)
+
+df_kinetics_D7_D0_log2[c(3:NCOL)] <- log2((df_kinetics_D7[c(3:NCOL)])/(df_kinetics_D0[c(3:NCOL)])) ## calculate the fold changes
+df_kinetics_D7_D0_influ_log2fc <- df_kinetics_D7_D0_log2 %>% dplyr::select(-c(timepoint)) ##remove non-necessary columns 
+
+## rename the columns
+df_kinetics_D7_D0_influ_log2fc <- rename_with(df_kinetics_D7_D0_influ_log2fc, ~(gsub("_per", "_D7D0_per", .x, fixed = TRUE)))
+df_kinetics_D7_D0_influ_log2fc <- rename_with(df_kinetics_D7_D0_influ_log2fc, ~(gsub("_num", "_D7D0_num", .x, fixed = TRUE)))
+df_kinetics_D7_D0_influ_log2fc <- df_kinetics_D7_D0_influ_log2fc %>%
+  rename(CD4TnTm_D7D0=CD4TnTm,
+         CD8TnTm_D7D0=CD8TnTm)
+
+truc_d7d0_raw <- rename_with(truc_d7d0_raw, ~(gsub("_per", "_D7D0_per", .x, fixed = TRUE)))
+truc_d7d0_raw <- rename_with(truc_d7d0_raw, ~(gsub("_num", "_D7D0_num", .x, fixed = TRUE)))
+truc_d7d0_raw <- truc_d7d0_raw %>%
+  rename(CD4TnTm_D7D0=CD4TnTm,
+         CD8TnTm_D7D0=CD8TnTm)
+
+## calculate the log2 fold change (adding 0.01 to every cell)
+df_kinetics_D7_D0 <- as.data.frame(c()) ## set as a dataframe
+df_kinetics_D7_D0 <- df_kinetics_D0[c(1,2)] ## add participant data
+df_kinetics_D7_D0_log2 <- as.data.frame(c()) ## set as a dataframe
+df_kinetics_D7_D0_log2 <- df_kinetics_D0[c(1,2)] ## add participant data
+NCOL <- ncol(df_kinetics_D0)
+
+df_kinetics_D7_D0[c(3:NCOL)] <- ((df_kinetics_D7[c(3:NCOL)]+0.01)/(df_kinetics_D0[c(3:NCOL)]+0.01)) ## calculate the fold changes
+truc_d7d0_raw_p01 <- df_kinetics_D7_D0 %>% dplyr::select(-timepoint)
+
+df_kinetics_D7_D0_log2[c(3:NCOL)] <- log2((df_kinetics_D7[c(3:NCOL)]+0.01)/(df_kinetics_D0[c(3:NCOL)]+0.01)) ## calculate the fold changes
+df_kinetics_D7_D0_influ_log2fc_p01 <- df_kinetics_D7_D0_log2 %>% dplyr::select(-c(timepoint)) ##remove non-necessary columns 
+
+## rename the columns
+df_kinetics_D7_D0_influ_log2fc_p01 <- rename_with(df_kinetics_D7_D0_influ_log2fc_p01, ~(gsub("_per", "_D7D0_per", .x, fixed = TRUE)))
+df_kinetics_D7_D0_influ_log2fc_p01 <- rename_with(df_kinetics_D7_D0_influ_log2fc_p01, ~(gsub("_num", "_D7D0_num", .x, fixed = TRUE)))
+df_kinetics_D7_D0_influ_log2fc_p01 <- df_kinetics_D7_D0_influ_log2fc_p01 %>%
+  rename(CD4TnTm_D7D0=CD4TnTm,
+         CD8TnTm_D7D0=CD8TnTm)
+
+truc_d7d0_raw_p01 <- rename_with(truc_d7d0_raw_p01, ~(gsub("_per", "_D7D0_per", .x, fixed = TRUE)))
+truc_d7d0_raw_p01 <- rename_with(truc_d7d0_raw_p01, ~(gsub("_num", "_D7D0_num", .x, fixed = TRUE)))
+truc_d7d0_raw_p01 <- truc_d7d0_raw_p01 %>%
+  rename(CD4TnTm_D7D0=CD4TnTm,
+         CD8TnTm_D7D0=CD8TnTm)
+
+```
+
+# HAI GMT Day 0 levels
+## Create GMT T0 factor groups
+```{r}
+HI_df <- HI_all %>%
+  mutate(T0_l3= ifelse(GMT_T0<40, "<40",
+                       ifelse(GMT_T0 <100 & GMT_T0>=40 , "40-80",
+                              ifelse(GMT_T0 >= 100, ">80", NA)))) %>%
+  mutate_at(c("T0_l3"), list(~factor(.)))
+
+HI_df$T0_l3 <- factor(HI_df$T0_l3, levels = c("<40","40-80",">80"))
+
+table(HI_df$T0_l3)
+
+HI_df_subject <- HI_df %>%
+  left_join(vital.subject,by="subject_identifier")
+```
+
+## Immunotype
+```{r}
+## import immunotypes
+immunotype <- readRDS(
+  "/Users/alpercevirgel/Documents/Alper RIVM/4_Manuscripts/Chapter_1/R_analysis/vital.truc_influ_d0_cluster.rds") %>%
+  dplyr::select(subject_identifier,cluster_number)
+
+## merge with antibody data
+HI_immunotype <- HI_df %>% 
+  left_join(immunotype, by="subject_identifier") %>% 
+  drop_na(sero_res3, cluster_number)
+
+## reorder responder levels
+HI_immunotype$sero_res3 <- factor(HI_immunotype$sero_res3, levels = c("non_responder","low_responder","high_responder"))
+
+```
+
+## add CMV and cluster data
+```{r}
+HI_df_subject_CVI <- HI_df_subject %>% left_join(chronic_viral_inf, by="subject_identifier") %>%
+    mutate_at(c("sero_res2","sero_res3"), list(~factor(.)))
+
+head(HI_df_subject_CVI)
+
+```
+
+## stat analysis GMT T0 factors & age
+```{r}
+## melt
+df_stat_melt <- HI_df_subject %>% 
+  dplyr::select(T0_l3,age) %>%
+  reshape2::melt(.)
+
+### kruskal.test and Dunn's test
+## With kruskal.test we identify overall which subsets are significant and then Dunn's test tells us which are different between pairs of clusters
+kw.test.all <- df_stat_melt %>% 
+  group_by(variable) %>% 
+  kruskal_test(value ~ T0_l3) %>% 
+  adjust_pvalue(method = "BH") 
+kw.test.all.eff.size <- df_stat_melt %>% 
+  group_by(variable) %>% 
+  kruskal_effsize(value ~ T0_l3) 
+combine.kw <- kw.test.all %>% 
+  left_join(kw.test.all.eff.size, by="variable") %>% 
+  filter(p.adj < 0.05)
+
+## Number of variables with p.adj-value <0.05
+length(combine.kw$variable)
+
+## table summarizing effect size of the significant variables 
+table(combine.kw$magnitude)
+
+### Post-hoc analysis dunn's test, pairwise multiple comparisons to check which are significant in pairwise analysis.
+dun.test.pos <- df_stat_melt %>% 
+  group_by(variable) %>% 
+  dunn_test(value ~ T0_l3, p.adjust.method = "BH", detailed = TRUE)
+dun.test.pos <- dun.test.pos %>% 
+  filter(p.adj.signif != "ns") # %>% 
+  #rename(cluster_number_1 = group1) %>% 
+  #rename(cluster_number_2 = group2)
+head(dun.test.pos)
+
+unique(dun.test.pos$variable)
+```
+
+## stat analysis GMT T0 levels & immunotype
+```{r}
+immunotype %>% 
+  left_join(HI_df, by="subject_identifier") %>%
+  drop_na(cluster_number,GMT_T4) %>%
+  dplyr::select(cluster_number,GMT_T4) %>%
+  droplevels() %>%
+  group_by(cluster_number) %>%
+  summarise(mean(GMT_T4)) %>% 
+  arrange(`mean(GMT_T4)`) 
+
+immunotype %>% 
+  left_join(HI_df, by="subject_identifier") %>%
+  drop_na(cluster_number,GMT_T4) %>%
+  dplyr::select(cluster_number,GMT_T4) %>%
+  droplevels() %>%
+  group_by(cluster_number) %>%
+  summarise(median(GMT_T4)) %>% 
+  arrange(`median(GMT_T4)`) 
+
+
+immunotype %>% 
+  left_join(HI_df, by="subject_identifier") %>%
+  drop_na(cluster_number,GMT_T4T0) %>%
+  dplyr::select(cluster_number,GMT_T4T0) %>%
+  droplevels() %>%
+  group_by(cluster_number) %>%
+  summarise(mean(GMT_T4T0)) %>% 
+  arrange(`mean(GMT_T4T0)`) 
+
+immunotype %>% 
+  left_join(HI_df, by="subject_identifier") %>%
+  drop_na(cluster_number,GMT_T4T0) %>%
+  dplyr::select(cluster_number,GMT_T4T0) %>%
+  droplevels() %>%
+  group_by(cluster_number) %>%
+  summarise(median(GMT_T4T0)) %>% 
+  arrange(`median(GMT_T4T0)`) 
+```
+
+### D0
+```{r}
+## select the dataset
+df_stat <- immunotype %>% 
+  left_join(HI_df, by="subject_identifier") %>%
+  drop_na(cluster_number) %>%
+  dplyr::select(subject_identifier,cluster_number,GMT_T0) %>%
+  droplevels()
+
+## subject identifier and cluster number as.character
+df_stat %<>% mutate_at(
+  c("subject_identifier","cluster_number"),
+  list(~as.character(.)))
+
+## melt
+df_stat_melt <- df_stat %>% 
+  reshape2::melt(.)
+
+### kruskal.test and Dunn's test
+## With kruskal.test we identify overall which subsets are significant and then Dunn's test tells us which are different between pairs of clusters
+kw.test.all <- df_stat_melt %>% 
+  group_by(variable) %>% 
+  kruskal_test(value ~ cluster_number) %>% 
+  adjust_pvalue(method = "BH") 
+kw.test.all.eff.size <- df_stat_melt %>% 
+  group_by(variable) %>% 
+  kruskal_effsize(value ~ cluster_number) 
+combine.kw <- kw.test.all %>% 
+  left_join(kw.test.all.eff.size, by="variable") %>% 
+  filter(p.adj < 0.05)
+
+## Number of variables with p.adj-value <0.05
+length(combine.kw$variable)
+
+## table summarizing effect size of the significant variables 
+table(combine.kw$magnitude)
+
+### Post-hoc analysis dunn's test, pairwise multiple comparisons to check which are significant in pairwise analysis.
+dun.test.pos <- df_stat_melt %>% 
+  group_by(variable) %>% 
+  dunn_test(value ~ cluster_number, p.adjust.method = "BH", detailed = TRUE)
+dun.test.pos <- dun.test.pos %>% 
+  filter(p.adj<0.05) # %>% 
+  #rename(cluster_number_1 = group1) %>% 
+  #rename(cluster_number_2 = group2)
+dun.test.pos
+
+```
+
+### D28
+```{r}
+## select the dataset
+df_stat <- immunotype %>% 
+  left_join(HI_df, by="subject_identifier") %>%
+  drop_na(cluster_number) %>%
+  dplyr::select(subject_identifier,cluster_number,GMT_T4) %>%
+  droplevels()
+
+## subject identifier and cluster number as.character
+df_stat %<>% mutate_at(
+  c("subject_identifier","cluster_number"),
+  list(~as.character(.)))
+
+## melt
+df_stat_melt <- df_stat %>% 
+  reshape2::melt(.)
+
+### kruskal.test and Dunn's test
+## With kruskal.test we identify overall which subsets are significant and then Dunn's test tells us which are different between pairs of clusters
+kw.test.all <- df_stat_melt %>% 
+  group_by(variable) %>% 
+  kruskal_test(value ~ cluster_number) %>% 
+  adjust_pvalue(method = "BH") 
+kw.test.all.eff.size <- df_stat_melt %>% 
+  group_by(variable) %>% 
+  kruskal_effsize(value ~ cluster_number) 
+combine.kw <- kw.test.all %>% 
+  left_join(kw.test.all.eff.size, by="variable") %>% 
+  filter(p.adj < 0.05)
+
+## Number of variables with p.adj-value <0.05
+length(combine.kw$variable)
+
+## table summarizing effect size of the significant variables 
+table(combine.kw$magnitude)
+
+### Post-hoc analysis dunn's test, pairwise multiple comparisons to check which are significant in pairwise analysis.
+dun.test.pos <- df_stat_melt %>% 
+  group_by(variable) %>% 
+  dunn_test(value ~ cluster_number, p.adjust.method = "BH", detailed = TRUE)
+dun.test.pos <- dun.test.pos %>% 
+  filter(p.adj<0.05) # %>% 
+  #rename(cluster_number_1 = group1) %>% 
+  #rename(cluster_number_2 = group2)
+kw.test.all
+dun.test.pos
+```
+
+### D28D0
+```{r}
+## select the dataset
+df_stat <- immunotype %>% 
+  left_join(HI_df, by="subject_identifier") %>%
+  drop_na(cluster_number) %>%
+  dplyr::select(subject_identifier,cluster_number,GMT_T4T0) %>%
+  droplevels()
+
+## subject identifier and cluster number as.character
+df_stat %<>% mutate_at(
+  c("subject_identifier","cluster_number"),
+  list(~as.character(.)))
+
+## melt
+df_stat_melt <- df_stat %>% 
+  reshape2::melt(.)
+
+### kruskal.test and Dunn's test
+## With kruskal.test we identify overall which subsets are significant and then Dunn's test tells us which are different between pairs of clusters
+kw.test.all <- df_stat_melt %>% 
+  group_by(variable) %>% 
+  kruskal_test(value ~ cluster_number) %>% 
+  adjust_pvalue(method = "BH") 
+kw.test.all.eff.size <- df_stat_melt %>% 
+  group_by(variable) %>% 
+  kruskal_effsize(value ~ cluster_number) 
+combine.kw <- kw.test.all %>% 
+  left_join(kw.test.all.eff.size, by="variable") %>% 
+  filter(p.adj < 0.05)
+
+## Number of variables with p.adj-value <0.05
+length(combine.kw$variable)
+
+## table summarizing effect size of the significant variables 
+table(combine.kw$magnitude)
+
+### Post-hoc analysis dunn's test, pairwise multiple comparisons to check which are significant in pairwise analysis.
+dun.test.pos <- df_stat_melt %>% 
+  group_by(variable) %>% 
+  dunn_test(value ~ cluster_number, p.adjust.method = "BH", detailed = TRUE)
+dun.test.pos <- dun.test.pos %>% 
+  filter(p.adj<0.05) # %>% 
+  #rename(cluster_number_1 = group1) %>% 
+  #rename(cluster_number_2 = group2)
+
+kw.test.all
+dun.test.pos
+
+```
+
+# Data organization, trucount baseline and post-vaccination
+```{r}
+## Trucounts
+truc_all <- vital.truc_influ_additional 
+
+truc_d0 <- vital.truc_influ_d0_additional %>%
+  dplyr::select(-timepoint) %>%
+  as.data.frame() 
+
+truc_d2 <- vital.truc_influ_d2_additional %>%
+  dplyr::select(-timepoint) %>%
+  as.data.frame()  
+
+truc_d7 <- vital.truc_influ_d7_additional %>%
+  dplyr::select(-timepoint) %>%
+  as.data.frame()
+
+truc_d1d0 <- truc_d1d0_raw_p01 %>% 
+  as.data.frame() %>%
+  drop_na()
+
+truc_d2d0 <- truc_d2d0_raw_p01 %>% 
+  as.data.frame() %>%
+  drop_na()
+
+truc_d12d0 <- truc_d12d0_raw_p01 %>% 
+  as.data.frame() %>%
+  drop_na()
+
+truc_d1d0_log2 <- df_kinetics_D1_D0_influ_log2fc_p01 %>% 
+  as.data.frame() %>%
+  drop_na()
+
+truc_d2d0_log2 <- df_kinetics_D2_D0_influ_log2fc_p01 %>% 
+  as.data.frame() %>%
+  drop_na()
+
+truc_d12d0_log2 <- df_kinetics_D12_D0_influ_log2fc_p01 %>% 
+  as.data.frame() %>%
+  drop_na()
+
+truc_d7d0_log2 <- df_kinetics_D7_D0_influ_log2fc_p01 %>% 
+  as.data.frame() %>%
+  drop_na()
+
+truc_d7d0 <- truc_d7d0_raw_p01 %>% 
+  as.data.frame() %>%
+  drop_na()
+
+```
+
+# Data organization for models
+```{r}
+## df_model dataset, HI and age,sex
+df_model_1 <- as.data.frame(HI_df_subject) %>%
+  dplyr::select(-c(GMT_T5,GMT_T5T0,strain))%>%
+  dplyr::mutate(sex = dplyr::recode(sex, "1" = 1, "2" = 2),
+                age_group = dplyr::recode(age_group, "25-49" = 1, "50-64"= 2, "65-98"= 3),
+                T0_l3 = dplyr::recode(T0_l3,"<40" = 1, "40-80"= 2, ">80" = 3)) %>%
+  mutate_at(c("sex","age_group","T0_l3"), list(~as.factor(.))) %>%
+  drop_na(GMT_T4,GMT_T4T0) %>%
+  droplevels()
+
+
+## df_model dataset, HI and age,sex, CVI
+df_model_2 <- as.data.frame(HI_df_subject_CVI) %>% 
+  dplyr::select(-c(GMT_T5,GMT_T5T0,strain))%>%
+  dplyr::mutate(sex = dplyr::recode(sex, "1" = 1, "2" = 2),
+                age_group = dplyr::recode(age_group, "25-49" = 1, "50-64"= 2, "65-98"= 3),
+                CMV = dplyr::recode(MIA_CMV_Seropositivity, "1" = 1, "2" = 2, "3" = 3),
+                EBV = dplyr::recode(MIA_EBV_Seropositivity, "1" = 1, "2" = 2, "3" = 3),
+                VZV = dplyr::recode(MIA_VZV_Seropositivity, "1" = 1, "2" = 2),
+                T0_l3 = dplyr::recode(T0_l3,"<40" = 1, "40-80"= 2, ">80" = 3)) %>%
+  mutate_at(c("sex","age_group","T0_l3","CMV","EBV","VZV"), list(~as.factor(.))) %>% 
+  filter(CMV %in% c(1,2)) %>%
+  drop_na(GMT_T4,GMT_T4T0) %>%
+  relocate(where(is.numeric), .after = last_col()) %>%
+  droplevels()
+df_model_2$CMV <- factor(df_model_2$CMV, levels = c(2,1))
+
+## df_model dataset, HI and age,sex, CVI, immunotype
+df_model_3 <- as.data.frame(HI_df_subject_CVI) %>%
+  dplyr::select(-c(GMT_T5,GMT_T5T0,strain))%>%
+  left_join(immunotype, by="subject_identifier") %>%
+  dplyr::mutate(sex = dplyr::recode(sex, "1" = 1, "2" = 2),
+                age_group = dplyr::recode(age_group, "25-49" = 1, "50-64"= 2, "65-98"= 3),
+                CMV = dplyr::recode(MIA_CMV_Seropositivity, "1" = 1, "2" = 2, "3" = 3),
+                EBV = dplyr::recode(MIA_EBV_Seropositivity, "1" = 1, "2" = 2, "3" = 3),
+                VZV = dplyr::recode(MIA_VZV_Seropositivity, "1" = 1, "2" = 2),
+                T0_l3 = dplyr::recode(T0_l3,"<40" = 1, "40-80"= 2, ">80" = 3)) %>%
+  mutate_at(c("sex","cluster_number","age_group","T0_l3","CMV","EBV","VZV"), list(~as.factor(.))) %>%
+  filter(CMV %in% c(1,2)) %>%
+  drop_na(GMT_T4,GMT_T4T0,cluster_number) %>%
+  relocate(where(is.numeric), .after = last_col())%>%
+  droplevels()
+df_model_3$cluster_number <- factor(df_model_3$cluster_number, levels = c("9","8","7","6","5","4","3","2","1"))
+
+## df_model dataset, HI and age,sex, CVI and d0 truc
+df_model_6 <- as.data.frame(HI_df_subject_CVI) %>% 
+  dplyr::select(-c(GMT_T5,GMT_T5T0,strain))%>%
+  left_join(vital.truc_influ_d0_additional, by="subject_identifier") %>%
+  dplyr::select(-timepoint) %>%
+  dplyr::mutate(sex = dplyr::recode(sex, "1" = 1, "2" = 2),
+                age_group = dplyr::recode(age_group, "25-49" = 1, "50-64"= 2, "65-98"= 3),
+                CMV = dplyr::recode(MIA_CMV_Seropositivity, "1" = 1, "2" = 2, "3" = 3),
+                EBV = dplyr::recode(MIA_EBV_Seropositivity, "1" = 1, "2" = 2, "3" = 3),
+                VZV = dplyr::recode(MIA_VZV_Seropositivity, "1" = 1, "2" = 2),
+                T0_l3 = dplyr::recode(T0_l3,"<40" = 1, "40-80"= 2, ">80" = 3)) %>%
+  mutate_at(c("sex","age_group","T0_l3","CMV","EBV","VZV"), list(~as.factor(.))) %>% 
+  filter(CMV %in% c(1,2)) %>%
+  relocate(where(is.numeric), .after = last_col())%>%
+  drop_na(GMT_T4,GMT_T4T0,granulocytes_D0_per) %>%
+  droplevels()
+
+## df_model dataset, HI and age,sex, CVI and d2d0 truc
+df_model_9 <- as.data.frame(HI_df_subject_CVI) %>% 
+  dplyr::select(-c(GMT_T5,GMT_T5T0,strain))%>%
+  left_join(truc_d12d0_log2, by="subject_identifier") %>%
+  dplyr::mutate(sex = dplyr::recode(sex, "1" = 1, "2" = 2),
+                age_group = dplyr::recode(age_group, "25-49" = 1, "50-64"= 2, "65-98"= 3),
+                CMV = dplyr::recode(MIA_CMV_Seropositivity, "1" = 1, "2" = 2, "3" = 3),
+                EBV = dplyr::recode(MIA_EBV_Seropositivity, "1" = 1, "2" = 2, "3" = 3),
+                VZV = dplyr::recode(MIA_VZV_Seropositivity, "1" = 1, "2" = 2),
+                T0_l3 = dplyr::recode(T0_l3,"<40" = 1, "40-80"= 2, ">80" = 3)) %>%
+  mutate_at(c("sex","age_group","T0_l3","CMV","EBV","VZV"), list(~as.factor(.))) %>% 
+  filter(CMV %in% c(1,2)) %>%
+  relocate(where(is.numeric), .after = last_col())%>%
+  drop_na(GMT_T4,GMT_T4T0,granulocytes_D12D0_per) %>%
+  droplevels()
+
+## df_model dataset, HI and age,sex, CVI and d7d0 truc
+df_model_5 <- as.data.frame(HI_df_subject_CVI) %>% 
+  dplyr::select(-c(GMT_T5,GMT_T5T0,strain))%>%
+  left_join(truc_d7d0_log2, by="subject_identifier") %>%
+  dplyr::mutate(sex = dplyr::recode(sex, "1" = 1, "2" = 2),
+                age_group = dplyr::recode(age_group, "25-49" = 1, "50-64"= 2, "65-98"= 3),
+                CMV = dplyr::recode(MIA_CMV_Seropositivity, "1" = 1, "2" = 2, "3" = 3),
+                EBV = dplyr::recode(MIA_EBV_Seropositivity, "1" = 1, "2" = 2, "3" = 3),
+                VZV = dplyr::recode(MIA_VZV_Seropositivity, "1" = 1, "2" = 2),
+                T0_l3 = dplyr::recode(T0_l3,"<40" = 1, "40-80"= 2, ">80" = 3)) %>%
+  mutate_at(c("sex","age_group","T0_l3","CMV","EBV","VZV"), list(~as.factor(.))) %>% 
+  filter(CMV %in% c(1,2)) %>%
+  relocate(where(is.numeric), .after = last_col())%>%
+  drop_na(GMT_T4,GMT_T4T0,granulocytes_D7D0_per) %>%
+  droplevels()
+```
+
+
+
