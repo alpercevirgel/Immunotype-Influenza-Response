@@ -1,2 +1,1 @@
-# Immunotype-Influenza-Response
- 
+R scripts for Cevirgel et al.  
