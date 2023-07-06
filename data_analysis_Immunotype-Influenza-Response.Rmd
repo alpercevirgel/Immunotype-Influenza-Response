@@ -896,7 +896,7 @@ df_model <- df_model_3 %>% #dataset with clusters
   droplevels()
 
 contrasts(df_model$cluster_number) = contr.sum(9)
-
+contrasts(df_model$T0_l3) = contr.sum(3)
 ```
 
 ## run model
