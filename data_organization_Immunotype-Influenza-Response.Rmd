@@ -623,16 +623,11 @@ df_model_3 <- as.data.frame(HI_df_subject_CVI) %>%
   left_join(immunotype, by="subject_identifier") %>%
   dplyr::mutate(sex = dplyr::recode(sex, "1" = 1, "2" = 2),
                 age_group = dplyr::recode(age_group, "25-49" = 1, "50-64"= 2, "65-98"= 3),
-                CMV = dplyr::recode(MIA_CMV_Seropositivity, "1" = 1, "2" = 2, "3" = 3),
-                EBV = dplyr::recode(MIA_EBV_Seropositivity, "1" = 1, "2" = 2, "3" = 3),
-                VZV = dplyr::recode(MIA_VZV_Seropositivity, "1" = 1, "2" = 2),
                 T0_l3 = dplyr::recode(T0_l3,"<40" = 1, "40-80"= 2, ">80" = 3)) %>%
-  mutate_at(c("sex","cluster_number","age_group","T0_l3","CMV","EBV","VZV"), list(~as.factor(.))) %>%
-  filter(CMV %in% c(1,2)) %>%
+  mutate_at(c("sex","cluster_number","age_group","T0_l3"), list(~as.factor(.))) %>%
   drop_na(GMT_T4,GMT_T4T0,cluster_number) %>%
   relocate(where(is.numeric), .after = last_col())%>%
   droplevels()
-df_model_3$cluster_number <- factor(df_model_3$cluster_number, levels = c("9","8","7","6","5","4","3","2","1"))
 
 ## df_model dataset, HI and age,sex, CVI and d0 truc
 df_model_6 <- as.data.frame(HI_df_subject_CVI) %>% 

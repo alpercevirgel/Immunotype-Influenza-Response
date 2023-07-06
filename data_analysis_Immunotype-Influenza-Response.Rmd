@@ -892,43 +892,30 @@ fisher.test(as.data.frame(chisq.dat[,-1]), simulate.p.value = TRUE)
 ```{r}
 df_model <- df_model_3 %>% #dataset with clusters
     dplyr::mutate(`Day 0 HI titer` = dplyr::recode(T0_l3, "1"=":: <40",  "2"=":: 40-80",  "3"=":: >80",),
-                sex = dplyr::recode(sex, "1"=":: Male",  "2"=":: Female"),
-                CMV = dplyr::recode(CMV, "1"=":: (+)",  "2"=":: (-)")) %>%
+                sex = dplyr::recode(sex, "1"=":: Male",  "2"=":: Female")) %>%
   droplevels()
-df_model$CMV <- factor(df_model$CMV, levels = c(":: (-)",":: (+)"))
 
-# Create new variables for each cluster
-for (i in 1:9) {
-  df_model[[paste0('cluster_', i)]] <- ifelse(df_model$cluster_number == i, 1, 0)}
+contrasts(df_model$cluster_number) = contr.sum(9)
+
 ```
 
-## run models
+## run model
 ```{r}
-for (i in 1:9){
-  model_name <- paste0("model_gaml_T4_c", i)
-  formula_str <- paste0("GMT_T4 ~ sex + CMV + `Day 0 HI titer` + factor(cluster_", i, ")")
-  
-  model <- gamlss(as.formula(formula_str), data=df_model, family=NBI())
-  
-  assign(model_name, model, envir = .GlobalEnv)
-  
-  print(summary(get(model_name)))
-}
+model_gamlss_immunotype<-gamlss(
+  GMT_T4 ~ 
+    cluster_number+
+    T0_l3+
+    sex
+  ,data=df_model, 
+  family=NBI())
 
+summary(model_gamlss_immunotype)
 ```
 
 ## plot models comparing immunotypes
 ```{r}
 pdf(file = paste0(models.dir, "gaml_T4_c1_9.pdf", sep=""), width =3.5 , height =3.0)
-dwplot(list(model_gaml_T4_c1, 
-            model_gaml_T4_c2, 
-            model_gaml_T4_c3, 
-            model_gaml_T4_c4, 
-            model_gaml_T4_c5, 
-            model_gaml_T4_c6, 
-            model_gaml_T4_c7, 
-            model_gaml_T4_c8,
-            model_gaml_T4_c9), 
+dwplot(list(model_gamlss_immunotype), 
        show_intercept = FALSE,
        dot_args = list(aes(color = model)))+
     geom_vline(xintercept = 0,
@@ -941,61 +928,6 @@ dwplot(list(model_gaml_T4_c1,
 
 dev.off()
 ```
-
-
-```{r}
-
-mod_fit1<-summary(model_gaml_T4_c1, save=TRUE)
-as.list(mod_fit1$pvalue)$Immunotype1
-
-mod_fit2<-summary(model_gaml_T4_c2, save=TRUE)
-as.list(mod_fit2$pvalue)$Immunotype2
-
-mod_fit3<-summary(model_gaml_T4_c3, save=TRUE)
-as.list(mod_fit3$pvalue)$Immunotype3
-
-mod_fit4<-summary(model_gaml_T4_c4, save=TRUE)
-as.list(mod_fit4$pvalue)$Immunotype4
-
-mod_fit5<-summary(model_gaml_T4_c5, save=TRUE)
-as.list(mod_fit5$pvalue)$Immunotype5
-
-mod_fit6<-summary(model_gaml_T4_c6, save=TRUE)
-as.list(mod_fit6$pvalue)$Immunotype6
-
-mod_fit7<-summary(model_gaml_T4_c7, save=TRUE)
-as.list(mod_fit7$pvalue)$Immunotype7
-
-mod_fit8<-summary(model_gaml_T4_c8, save=TRUE)
-as.list(mod_fit8$pvalue)$Immunotype8
-
-mod_fit9<-summary(model_gaml_T4_c9, save=TRUE)
-as.list(mod_fit9)$`Immunotype rest`
-
-
-
-gamlss_immunotype_pval <-rbind(
-  as.list(mod_fit1$pvalue)$`Immunotype1`,
-  as.list(mod_fit2$pvalue)$`Immunotype2`,
-  as.list(mod_fit3$pvalue)$`Immunotype3`,
-  as.list(mod_fit4$pvalue)$`Immunotype4`,
-  as.list(mod_fit5$pvalue)$`Immunotype5`,
-  as.list(mod_fit6$pvalue)$`Immunotype6`,
-  as.list(mod_fit7$pvalue)$`Immunotype7`,
-  as.list(mod_fit8$pvalue)$`Immunotype8`,
-  as.list(mod_fit9$pvalue)$`Immunotype rest`
-  ) %>% 
-  as.data.frame() %>% 
-  rename("p"="V1") %>%
-  adjust_pvalue(method = "BH", p.col = "p") 
-gamlss_immunotype_pval
-```
-
-
-
-
-
-
 
 # Pre-/post-vaccination immune subset differences between immunotypes 2-3-6 (Figure 5a-c)(Supp.Table 5)
 ## cluster 2 d0 vs rest
