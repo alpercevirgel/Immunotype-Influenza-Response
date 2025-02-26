@@ -17,4 +17,3 @@ Alper Cevirgel; alpercevirgel@gmail.com
 
 For information related to participants and related metadata:
 Debbie van Baarle; d.van.baarle@umcg.nl
-Josine van Beek; josine.van.beek@rivm.nl
