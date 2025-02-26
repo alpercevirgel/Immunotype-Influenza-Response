@@ -6,7 +6,7 @@ output: pdf_document
 
 # library
 ```{r message=FALSE, warning=FALSE, include=FALSE}
-source("codes/libraries_functions.R") #load the libraries
+source("libraries_functions.R") #load the libraries
 analysis.path <- getwd()
 ```
 
